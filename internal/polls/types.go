@@ -5,4 +5,5 @@ type Poll struct {
 	Title   string
 	Options []string
 	IsOpen  bool
+	Outcome int
 }

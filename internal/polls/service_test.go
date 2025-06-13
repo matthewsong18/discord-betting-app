@@ -55,10 +55,7 @@ func TestExactlyTwoOptions(t *testing.T) {
 func TestClosePoll(t *testing.T) {
 	service := NewService()
 
-	title := "Which team will win first map?"
-	options := []string{"Team A", "Team B"}
-
-	poll, err := service.CreatePoll(title, options)
+	poll, err := createDefaultTestPoll(service)
 
 	if err != nil {
 		t.Fatal("CreatePoll returned an unexpected error:", err)
@@ -72,4 +69,31 @@ func TestClosePoll(t *testing.T) {
 	if poll.IsOpen {
 		t.Error("Expected poll to be closed after ClosePoll, but it was still open")
 	}
+}
+
+func TestSelectOutcome(t *testing.T) {
+	service := NewService()
+
+	poll, err := createDefaultTestPoll(service)
+
+	if err != nil {
+		t.Fatal("CreatePoll returned an unexpected error", err)
+	}
+
+	teamAIndex := 0
+	err = service.SelectOutcome(poll, teamAIndex)
+	if err != nil {
+		t.Fatal("SelectOutcome returned an unexpected error", err)
+	}
+
+	if poll.Outcome != teamAIndex {
+		t.Errorf("Expected selected outcome to be '%d', but got '%d'", teamAIndex, poll.Outcome)
+	}
+}
+
+func createDefaultTestPoll(service PollService) (*Poll, error) {
+	title := "Which team will win first map?"
+	options := []string{"Team A", "Team B"}
+	poll, err := service.CreatePoll(title, options)
+	return poll, err
 }

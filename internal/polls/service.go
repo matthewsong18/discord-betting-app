@@ -22,6 +22,7 @@ func (s *service) CreatePoll(title string, options []string) (*Poll, error) {
 		Title:   title,
 		Options: options,
 		IsOpen:  true,
+		Outcome: -1, // -1 indicates no outcome selected yet
 	}
 
 	return poll, nil
@@ -33,6 +34,15 @@ func notExactlyTwo(options []string) bool {
 
 func (s *service) ClosePoll(poll *Poll) {
 	poll.IsOpen = false
+}
+
+func (s *service) SelectOutcome(poll *Poll, outcomeIndex int) error {
+	if outcomeIndex < 0 || outcomeIndex >= len(poll.Options) {
+		return errors.New("invalid outcome index")
+	}
+	poll.Outcome = outcomeIndex
+
+	return nil
 }
 
 var _ PollService = (*service)(nil)
