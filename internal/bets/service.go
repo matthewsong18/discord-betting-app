@@ -1,16 +1,28 @@
 package bets
 
-import "errors"
+import (
+	"betting-discord-bot/internal/polls"
+	"errors"
+)
 
-type service struct{}
-
-func NewService() BetService {
-	return &service{}
+type service struct {
+	pollService polls.PollService
+	betList     []Bet
 }
 
-func (s service) CreateBet(pollId string, userId int, selectedOptionIndex int) (*Bet, error) {
+func NewService(pollService polls.PollService) BetService {
+	return &service{pollService, make([]Bet, 0)}
+}
+
+func (s *service) CreateBet(pollId string, userId int, selectedOptionIndex int) (*Bet, error) {
 	if selectedOptionIndex < 0 || selectedOptionIndex > 2 {
 		return nil, errors.New("invalid option index")
+	}
+
+	err := checkIfUserAlreadyBetOnPoll(pollId, userId, s)
+
+	if err != nil {
+		return nil, err
 	}
 
 	bet := &Bet{
@@ -19,5 +31,20 @@ func (s service) CreateBet(pollId string, userId int, selectedOptionIndex int) (
 		SelectedOptionIndex: selectedOptionIndex,
 	}
 
+	// Add the bet to the poll's bet list
+	s.betList = append(s.betList, *bet)
+
 	return bet, nil
+}
+
+func checkIfUserAlreadyBetOnPoll(pollId string, userId int, s *service) error {
+	for _, bet := range s.betList {
+		// Skip if the bet is not for the specified poll or user
+		if bet.PollId != pollId || bet.UserId != userId {
+			continue
+		}
+
+		return errors.New("user bet already exists for this poll")
+	}
+	return nil
 }

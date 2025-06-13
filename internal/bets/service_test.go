@@ -1,9 +1,12 @@
 package bets
 
-import "testing"
+import (
+	"betting-discord-bot/internal/polls"
+	"testing"
+)
 
 func TestCreateBet(t *testing.T) {
-	service := NewService()
+	service := NewService(nil)
 
 	pollId := "12345"
 	userId := 12345
@@ -28,7 +31,7 @@ func TestCreateBet(t *testing.T) {
 }
 
 func TestInvalidOption(t *testing.T) {
-	service := NewService()
+	service := NewService(nil)
 	pollId := "12345"
 	userId := 12345
 	selectedOptionIndex := -1 // Invalid index
@@ -40,5 +43,33 @@ func TestInvalidOption(t *testing.T) {
 
 	if err.Error() != "invalid option index" {
 		t.Errorf("Expected error message 'invalid option index', but got '%s'", err.Error())
+	}
+}
+
+func TestPreventingMultipleBetsPerPoll(t *testing.T) {
+	pollService := polls.NewService()
+	betService := NewService(pollService)
+
+	poll, _ := pollService.CreatePoll("Test Poll", []string{"Option 1", "Option 2"})
+
+	// Create the first bet for the poll
+	pollId := poll.ID
+	userId := 12345
+	selectedOptionIndex := 0
+
+	_, _ = betService.CreateBet(pollId, userId, selectedOptionIndex)
+
+	// Attempt to create a second bet for the same poll
+	_, err := betService.CreateBet(pollId, userId, selectedOptionIndex)
+
+	if err == nil {
+		t.Fatal("Expected an error when creating a second bet for the same poll, but got nil")
+	}
+
+	if err.Error() != "user bet already exists for this poll" {
+		t.Errorf("Expected error message 'user bet already exists for this poll', but got '%s'", err.Error())
+	}
+}
+
 	}
 }
