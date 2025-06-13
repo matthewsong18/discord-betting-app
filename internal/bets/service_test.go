@@ -6,15 +6,21 @@ import (
 )
 
 func TestCreateBet(t *testing.T) {
-	service := NewService(nil)
+	pollService := polls.NewService()
+	betService := NewService(pollService)
 
-	pollId := "12345"
+	poll, err := pollService.CreatePoll("Test Poll", []string{"Option 1", "Option 2"})
+	if err != nil {
+		t.Fatal("Failed to create poll:", err)
+	}
+
+	pollId := poll.ID
 	userId := 12345
 	selectedOptionIndex := 0
-	bet, err := service.CreateBet(pollId, userId, selectedOptionIndex)
+	bet, err1 := betService.CreateBet(pollId, userId, selectedOptionIndex)
 
-	if err != nil {
-		t.Fatal("CreateBet returned an unexpected error:", err)
+	if err1 != nil {
+		t.Fatal("CreateBet returned an unexpected error:", err1)
 	}
 
 	if bet.PollId != pollId {
@@ -31,11 +37,12 @@ func TestCreateBet(t *testing.T) {
 }
 
 func TestInvalidOption(t *testing.T) {
-	service := NewService(nil)
+	pollService := polls.NewService()
+	betService := NewService(pollService)
 	pollId := "12345"
 	userId := 12345
 	selectedOptionIndex := -1 // Invalid index
-	_, err := service.CreateBet(pollId, userId, selectedOptionIndex)
+	_, err := betService.CreateBet(pollId, userId, selectedOptionIndex)
 
 	if err == nil {
 		t.Fatal("Expected CreateBet to return an error for invalid option index, but got nil")
@@ -71,5 +78,24 @@ func TestPreventingMultipleBetsPerPoll(t *testing.T) {
 	}
 }
 
+func TestCannotBetOnClosedPoll(t *testing.T) {
+	pollService := polls.NewService()
+	betService := NewService(pollService)
+
+	poll, err := pollService.CreatePoll("Test Poll", []string{"Option 1", "Option 2"})
+	if err != nil {
+		t.Fatal("Failed to create poll:", err)
+	}
+	pollService.ClosePoll(poll)
+
+	// Attempt to create a bet on a closed poll
+	_, err = betService.CreateBet(poll.ID, 12345, 0)
+	if err == nil {
+		t.Fatal("Expected an error when betting on a closed poll, but got nil")
+	}
+
+	// Check if the error message is as expected
+	if err.Error() != "cannot bet on a closed poll" {
+		t.Errorf("Expected error message 'cannot bet on a closed poll', but got '%s'", err.Error())
 	}
 }

@@ -6,10 +6,13 @@ import (
 )
 
 type service struct {
+	pollList []Poll
 }
 
 func NewService() PollService {
-	return &service{}
+	return &service{
+		pollList: make([]Poll, 0),
+	}
 }
 
 func (s *service) CreatePoll(title string, options []string) (*Poll, error) {
@@ -25,6 +28,8 @@ func (s *service) CreatePoll(title string, options []string) (*Poll, error) {
 		Outcome: -1, // -1 indicates no outcome selected yet
 	}
 
+	s.pollList = append(s.pollList, *poll)
+
 	return poll, nil
 }
 
@@ -33,7 +38,11 @@ func notExactlyTwo(options []string) bool {
 }
 
 func (s *service) ClosePoll(poll *Poll) {
-	poll.IsOpen = false
+	for i, storedPoll := range s.pollList {
+		if storedPoll.ID == poll.ID {
+			s.pollList[i].IsOpen = false
+		}
+	}
 }
 
 func (s *service) SelectOutcome(poll *Poll, outcomeIndex int) error {
@@ -43,6 +52,18 @@ func (s *service) SelectOutcome(poll *Poll, outcomeIndex int) error {
 	poll.Outcome = outcomeIndex
 
 	return nil
+}
+
+func (s *service) GetPollById(id string) (Poll, error) {
+	for _, poll := range s.pollList {
+		// Skip if the poll ID does not match
+		if poll.ID != id {
+			continue
+		}
+
+		return poll, nil
+	}
+	return Poll{}, errors.New("poll not found")
 }
 
 var _ PollService = (*service)(nil)

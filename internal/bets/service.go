@@ -11,7 +11,10 @@ type service struct {
 }
 
 func NewService(pollService polls.PollService) BetService {
-	return &service{pollService, make([]Bet, 0)}
+	return &service{
+		pollService: pollService,
+		betList:     make([]Bet, 0),
+	}
 }
 
 func (s *service) CreateBet(pollId string, userId int, selectedOptionIndex int) (*Bet, error) {
@@ -19,7 +22,16 @@ func (s *service) CreateBet(pollId string, userId int, selectedOptionIndex int) 
 		return nil, errors.New("invalid option index")
 	}
 
-	err := checkIfUserAlreadyBetOnPoll(pollId, userId, s)
+	poll, err := s.pollService.GetPollById(pollId)
+	if err != nil {
+		return nil, err
+	}
+
+	if poll.IsOpen == false {
+		return nil, errors.New("cannot bet on a closed poll")
+	}
+
+	err = checkIfUserAlreadyBetOnPoll(pollId, userId, s)
 
 	if err != nil {
 		return nil, err
