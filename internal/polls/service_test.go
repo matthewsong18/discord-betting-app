@@ -51,3 +51,25 @@ func TestExactlyTwoOptions(t *testing.T) {
 		t.Errorf("Expected error message '%s', but got '%s'", expectedError, err.Error())
 	}
 }
+
+func TestClosePoll(t *testing.T) {
+	service := NewService()
+
+	title := "Which team will win first map?"
+	options := []string{"Team A", "Team B"}
+
+	poll, err := service.CreatePoll(title, options)
+
+	if err != nil {
+		t.Fatal("CreatePoll returned an unexpected error:", err)
+	}
+	if !poll.IsOpen {
+		t.Fatal("Expected poll to be open after creation, but it was closed")
+	}
+
+	service.ClosePoll(poll)
+
+	if poll.IsOpen {
+		t.Error("Expected poll to be closed after ClosePoll, but it was still open")
+	}
+}

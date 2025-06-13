@@ -31,4 +31,8 @@ func notExactlyTwo(options []string) bool {
 	return len(options) != 2
 }
 
+func (s *service) ClosePoll(poll *Poll) {
+	poll.IsOpen = false
+}
+
 var _ PollService = (*service)(nil)
