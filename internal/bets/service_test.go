@@ -26,3 +26,19 @@ func TestCreateBet(t *testing.T) {
 		t.Errorf("Expected bet to select option %d, but got %d", selectedOptionIndex, bet.SelectedOptionIndex)
 	}
 }
+
+func TestInvalidOption(t *testing.T) {
+	service := NewService()
+	pollId := "12345"
+	userId := 12345
+	selectedOptionIndex := -1 // Invalid index
+	_, err := service.CreateBet(pollId, userId, selectedOptionIndex)
+
+	if err == nil {
+		t.Fatal("Expected CreateBet to return an error for invalid option index, but got nil")
+	}
+
+	if err.Error() != "invalid option index" {
+		t.Errorf("Expected error message 'invalid option index', but got '%s'", err.Error())
+	}
+}
