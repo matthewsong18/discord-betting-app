@@ -99,3 +99,48 @@ func TestCannotBetOnClosedPoll(t *testing.T) {
 		t.Errorf("Expected error message 'cannot bet on a closed poll', but got '%s'", err.Error())
 	}
 }
+
+func TestGetBetOutcome(t *testing.T) {
+	// Check if the bet outcome is correctly retrieved
+
+	pollService := polls.NewService()
+	betService := NewService(pollService)
+	poll, err := pollService.CreatePoll("Test Poll", []string{"Option 1", "Option 2"})
+	if err != nil {
+		t.Fatal("Failed to create poll:", err)
+	}
+
+	pollId := poll.ID
+	userId := 12345
+	selectedOptionIndex := 0
+	bet, err1 := betService.CreateBet(pollId, userId, selectedOptionIndex)
+
+	if err1 != nil {
+		t.Fatal("CreateBet returned an unexpected error:", err1)
+	}
+
+	if bet.BetStatus != StatusPending {
+		t.Fatalf("Expected bet status to be 'PENDING', but got '%s'", bet.BetStatus)
+	}
+
+	pollService.ClosePoll(poll)
+	err = pollService.SelectOutcome(poll, selectedOptionIndex)
+	if err != nil {
+		t.Fatal("SelectOutcome returned an unexpected error:", err)
+	}
+
+	betService.UpdateBetsByPollId(*poll)
+	bet, err2 := betService.GetBet(pollId, userId)
+
+	if err2 != nil {
+		t.Fatal("GetBet returned an unexpected error:", err2)
+	}
+
+	if bet.BetStatus != StatusWon {
+		t.Errorf("Expected bet status to be 'WON', but got '%s'", bet.BetStatus)
+	}
+
+	if bet.SelectedOptionIndex != selectedOptionIndex {
+		t.Errorf("Expected bet to select option %d, but got %d", selectedOptionIndex, bet.SelectedOptionIndex)
+	}
+}
