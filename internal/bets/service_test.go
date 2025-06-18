@@ -15,7 +15,7 @@ func TestCreateBet(t *testing.T) {
 	}
 
 	pollId := poll.ID
-	userId := 12345
+	userId := "12345"
 	selectedOptionIndex := 0
 	bet, err1 := betService.CreateBet(pollId, userId, selectedOptionIndex)
 
@@ -28,7 +28,7 @@ func TestCreateBet(t *testing.T) {
 	}
 
 	if bet.UserId != userId {
-		t.Errorf("Expected bet to be associated with user %d, but got %d", userId, bet.UserId)
+		t.Errorf("Expected bet to be associated with user %s, but got %s", userId, bet.UserId)
 	}
 
 	if bet.SelectedOptionIndex != selectedOptionIndex {
@@ -40,7 +40,7 @@ func TestInvalidOption(t *testing.T) {
 	pollService := polls.NewService()
 	betService := NewService(pollService)
 	pollId := "12345"
-	userId := 12345
+	userId := "12345"
 	selectedOptionIndex := -1 // Invalid index
 	_, err := betService.CreateBet(pollId, userId, selectedOptionIndex)
 
@@ -61,7 +61,7 @@ func TestPreventingMultipleBetsPerPoll(t *testing.T) {
 
 	// Create the first bet for the poll
 	pollId := poll.ID
-	userId := 12345
+	userId := "12345"
 	selectedOptionIndex := 0
 
 	_, _ = betService.CreateBet(pollId, userId, selectedOptionIndex)
@@ -89,7 +89,7 @@ func TestCannotBetOnClosedPoll(t *testing.T) {
 	pollService.ClosePoll(poll.ID)
 
 	// Attempt to create a bet on a closed poll
-	_, err = betService.CreateBet(poll.ID, 12345, 0)
+	_, err = betService.CreateBet(poll.ID, "12345", 0)
 	if err == nil {
 		t.Fatal("Expected an error when betting on a closed poll, but got nil")
 	}
@@ -111,7 +111,7 @@ func TestGetBetOutcome(t *testing.T) {
 	}
 
 	pollId := poll.ID
-	userId := 12345
+	userId := "12345"
 	selectedOptionIndex := 0
 	bet, err1 := betService.CreateBet(pollId, userId, selectedOptionIndex)
 
@@ -142,5 +142,34 @@ func TestGetBetOutcome(t *testing.T) {
 
 	if bet.SelectedOptionIndex != selectedOptionIndex {
 		t.Errorf("Expected bet to select option %d, but got %d", selectedOptionIndex, bet.SelectedOptionIndex)
+	}
+}
+
+func TestGettingUserBets(t *testing.T) {
+	pollService := polls.NewService()
+	betService := NewService(pollService)
+
+	poll, createPollErr := pollService.CreatePoll("Test Poll", []string{"Option 1", "Option 2"})
+	if createPollErr != nil {
+		t.Fatal("Failed to create poll:", createPollErr)
+	}
+
+	userID := "12345"
+	bet, createBetErr := betService.CreateBet(poll.ID, userID, 0)
+	if createBetErr != nil {
+		t.Fatal("Failed to create bet:", createBetErr)
+	}
+
+	bets, getBetsErr := betService.GetBetsFromUser(userID)
+	if getBetsErr != nil {
+		t.Fatal("Failed to get bets from user:", getBetsErr)
+	}
+
+	if len(bets) != 1 {
+		t.Errorf("Expected 1 bet for user %s, but got %d", userID, len(bets))
+	}
+
+	if bets[0] != *bet || bets[0].PollId != poll.ID || bets[0].UserId != userID {
+		t.Errorf("Expected bet %v, but got %v", bet, bets[0])
 	}
 }

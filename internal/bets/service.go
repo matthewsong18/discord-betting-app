@@ -17,12 +17,12 @@ func NewService(pollService polls.PollService) BetService {
 	}
 }
 
-func (s *service) CreateBet(pollId string, userId int, selectedOptionIndex int) (*Bet, error) {
+func (betService *service) CreateBet(pollID string, userID string, selectedOptionIndex int) (*Bet, error) {
 	if selectedOptionIndex < 0 || selectedOptionIndex > 2 {
 		return nil, errors.New("invalid option index")
 	}
 
-	poll, err := s.pollService.GetPollById(pollId)
+	poll, err := betService.pollService.GetPollById(pollID)
 	if err != nil {
 		return nil, err
 	}
@@ -31,26 +31,26 @@ func (s *service) CreateBet(pollId string, userId int, selectedOptionIndex int) 
 		return nil, errors.New("cannot bet on a closed poll")
 	}
 
-	err = checkIfUserAlreadyBetOnPoll(pollId, userId, s)
+	err = checkIfUserAlreadyBetOnPoll(pollID, userID, betService)
 
 	if err != nil {
 		return nil, err
 	}
 
 	bet := &Bet{
-		PollId:              pollId,
-		UserId:              userId,
+		PollId:              pollID,
+		UserId:              userID,
 		SelectedOptionIndex: selectedOptionIndex,
 		BetStatus:           StatusPending,
 	}
 
 	// Add the bet to the poll's bet list
-	s.betList = append(s.betList, *bet)
+	betService.betList = append(betService.betList, *bet)
 
 	return bet, nil
 }
 
-func checkIfUserAlreadyBetOnPoll(pollId string, userId int, s *service) error {
+func checkIfUserAlreadyBetOnPoll(pollId string, userId string, s *service) error {
 	for _, bet := range s.betList {
 		// Skip if the bet is not for the specified poll or user
 		if bet.PollId != pollId || bet.UserId != userId {
@@ -62,23 +62,37 @@ func checkIfUserAlreadyBetOnPoll(pollId string, userId int, s *service) error {
 	return nil
 }
 
-func (s *service) GetBet(pollId string, userId int) (*Bet, error) {
-	for _, bet := range s.betList {
-		if bet.PollId == pollId && bet.UserId == userId {
+func (betService *service) GetBet(pollID string, userID string) (*Bet, error) {
+	for _, bet := range betService.betList {
+		if bet.PollId == pollID && bet.UserId == userID {
 			return &bet, nil
 		}
 	}
 	return nil, errors.New("bet not found for the specified poll and user")
 }
 
-func (s *service) UpdateBetsByPollId(poll polls.Poll) {
-	for i, bet := range s.betList {
+func (betService *service) UpdateBetsByPollId(poll polls.Poll) {
+	for i, bet := range betService.betList {
 		if bet.PollId == poll.ID {
 			if bet.SelectedOptionIndex == poll.Outcome {
-				s.betList[i].BetStatus = StatusWon
+				betService.betList[i].BetStatus = StatusWon
 			} else {
-				s.betList[i].BetStatus = StatusLost
+				betService.betList[i].BetStatus = StatusLost
 			}
 		}
 	}
 }
+
+func (betService *service) GetBetsFromUser(userID string) ([]Bet, error) {
+	var userBets []Bet
+
+	for _, bet := range betService.betList {
+		if bet.UserId == userID {
+			userBets = append(userBets, bet)
+		}
+	}
+
+	return userBets, nil
+}
+
+var _ BetService = (*service)(nil)

@@ -3,7 +3,8 @@ package bets
 import "betting-discord-bot/internal/polls"
 
 type BetService interface {
-	CreateBet(pollId string, userId int, selectedOptionIndex int) (*Bet, error)
-	GetBet(pollId string, userId int) (*Bet, error)
+	CreateBet(pollID string, userID string, selectedOptionIndex int) (*Bet, error)
+	GetBet(pollID string, userID string) (*Bet, error)
 	UpdateBetsByPollId(poll polls.Poll)
+	GetBetsFromUser(userID string) ([]Bet, error)
 }

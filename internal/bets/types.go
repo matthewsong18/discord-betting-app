@@ -23,7 +23,7 @@ func (bs BetStatus) String() string {
 
 type Bet struct {
 	PollId              string
-	UserId              int
+	UserId              string
 	SelectedOptionIndex int
 	BetStatus           BetStatus
 }
