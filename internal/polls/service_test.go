@@ -64,9 +64,14 @@ func TestClosePoll(t *testing.T) {
 		t.Fatal("Expected poll to be open after creation, but it was closed")
 	}
 
-	service.ClosePoll(poll)
+	service.ClosePoll(poll.ID)
 
-	if poll.IsOpen {
+	updatedPoll, updateError := service.GetPollById(poll.ID)
+	if updateError != nil {
+		t.Fatal("GetPollById returned an unexpected error:", updateError)
+	}
+
+	if updatedPoll.IsOpen {
 		t.Error("Expected poll to be closed after ClosePoll, but it was still open")
 	}
 }

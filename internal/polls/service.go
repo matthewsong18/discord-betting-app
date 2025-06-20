@@ -20,6 +20,7 @@ func (s *service) CreatePoll(title string, options []string) (*Poll, error) {
 		return nil, errors.New("poll must have exactly two options")
 	}
 
+	// Create a new poll
 	poll := &Poll{
 		ID:      uuid.New().String(),
 		Title:   title,
@@ -28,19 +29,24 @@ func (s *service) CreatePoll(title string, options []string) (*Poll, error) {
 		Outcome: -1, // -1 indicates no outcome selected yet
 	}
 
+	// Add a copy of the poll to the service's poll list
 	s.pollList = append(s.pollList, *poll)
 
-	return poll, nil
+	// Get the poll copy added to the list
+	pointerToPollCopy := &s.pollList[len(s.pollList)-1]
+
+	return pointerToPollCopy, nil
 }
 
 func notExactlyTwo(options []string) bool {
 	return len(options) != 2
 }
 
-func (s *service) ClosePoll(poll *Poll) {
+func (s *service) ClosePoll(pollID string) {
 	for i, storedPoll := range s.pollList {
-		if storedPoll.ID == poll.ID {
+		if storedPoll.ID == pollID {
 			s.pollList[i].IsOpen = false
+			return
 		}
 	}
 }

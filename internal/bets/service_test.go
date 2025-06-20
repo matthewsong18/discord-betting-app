@@ -86,7 +86,7 @@ func TestCannotBetOnClosedPoll(t *testing.T) {
 	if err != nil {
 		t.Fatal("Failed to create poll:", err)
 	}
-	pollService.ClosePoll(poll)
+	pollService.ClosePoll(poll.ID)
 
 	// Attempt to create a bet on a closed poll
 	_, err = betService.CreateBet(poll.ID, 12345, 0)
@@ -123,7 +123,7 @@ func TestGetBetOutcome(t *testing.T) {
 		t.Fatalf("Expected bet status to be 'PENDING', but got '%s'", bet.BetStatus)
 	}
 
-	pollService.ClosePoll(poll)
+	pollService.ClosePoll(poll.ID)
 	err = pollService.SelectOutcome(poll, selectedOptionIndex)
 	if err != nil {
 		t.Fatal("SelectOutcome returned an unexpected error:", err)
