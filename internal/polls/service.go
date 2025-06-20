@@ -60,16 +60,16 @@ func (s *service) SelectOutcome(poll *Poll, outcomeIndex int) error {
 	return nil
 }
 
-func (s *service) GetPollById(id string) (Poll, error) {
-	for _, poll := range s.pollList {
+func (s *service) GetPollById(id string) (*Poll, error) {
+	for i, poll := range s.pollList {
 		// Skip if the poll ID does not match
 		if poll.ID != id {
 			continue
 		}
 
-		return poll, nil
+		return &s.pollList[i], nil
 	}
-	return Poll{}, errors.New("poll not found")
+	return nil, errors.New("poll not found")
 }
 
 var _ PollService = (*service)(nil)

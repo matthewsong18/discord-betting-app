@@ -102,3 +102,22 @@ func createDefaultTestPoll(service PollService) (*Poll, error) {
 	poll, err := service.CreatePoll(title, options)
 	return poll, err
 }
+
+func TestGetPollById(t *testing.T) {
+	// Testing that the GetPollById method retrieves the exact poll that was created by CreatePoll instead of a copy.
+	pollService := NewService()
+
+	poll, err := createDefaultTestPoll(pollService)
+	if err != nil {
+		t.Fatal("CreatePoll returned an unexpected error:", err)
+	}
+
+	retrievedPoll, err := pollService.GetPollById(poll.ID)
+	if err != nil {
+		t.Fatal("GetPollById returned an unexpected error:", err)
+	}
+
+	if retrievedPoll != poll {
+		t.Errorf("Expected retrieved poll to be equal to created poll, but they differ")
+	}
+}
