@@ -77,20 +77,22 @@ func TestClosePoll(t *testing.T) {
 }
 
 func TestSelectOutcome(t *testing.T) {
+	// Setup
 	service := NewService()
 
 	poll, err := createDefaultTestPoll(service)
-
 	if err != nil {
 		t.Fatal("CreatePoll returned an unexpected error", err)
 	}
 
+	// Test selecting an outcome
 	teamAIndex := 0
-	err = service.SelectOutcome(poll, teamAIndex)
+	err = service.SelectOutcome(poll.ID, teamAIndex)
 	if err != nil {
 		t.Fatal("SelectOutcome returned an unexpected error", err)
 	}
 
+	// Verify the outcome
 	if poll.Outcome != teamAIndex {
 		t.Errorf("Expected selected outcome to be '%d', but got '%d'", teamAIndex, poll.Outcome)
 	}

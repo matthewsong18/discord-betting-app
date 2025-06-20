@@ -2,6 +2,7 @@ package polls
 
 import (
 	"errors"
+	"fmt"
 	"github.com/google/uuid"
 )
 
@@ -51,10 +52,16 @@ func (s *service) ClosePoll(pollID string) {
 	}
 }
 
-func (s *service) SelectOutcome(poll *Poll, outcomeIndex int) error {
+func (s *service) SelectOutcome(pollID string, outcomeIndex int) error {
+	poll, err := s.GetPollById(pollID)
+	if err != nil {
+		return fmt.Errorf("failed to get poll by ID: %w", err)
+	}
+
 	if outcomeIndex < 0 || outcomeIndex >= len(poll.Options) {
 		return errors.New("invalid outcome index")
 	}
+
 	poll.Outcome = outcomeIndex
 
 	return nil

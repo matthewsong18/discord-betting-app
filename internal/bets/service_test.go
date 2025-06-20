@@ -124,7 +124,7 @@ func TestGetBetOutcome(t *testing.T) {
 	}
 
 	pollService.ClosePoll(poll.ID)
-	err = pollService.SelectOutcome(poll, selectedOptionIndex)
+	err = pollService.SelectOutcome(poll.ID, selectedOptionIndex)
 	if err != nil {
 		t.Fatal("SelectOutcome returned an unexpected error:", err)
 	}
