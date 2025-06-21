@@ -1,31 +1,37 @@
 package main
 
 import (
-	"database/sql"
+	"betting-discord-bot/internal/storage"
 	"fmt"
 	"log"
 	"os"
-
-	_ "github.com/tursodatabase/go-libsql"
 )
 
 func run() (err error) {
-
-	dir, err := os.MkdirTemp("", "libsql-*")
-	if err != nil {
-		return err
+	dbPath := os.Getenv("DB_PATH")
+	if dbPath == "" {
+		log.Fatal("DB_PATH environment variable is not set")
 	}
-	defer func(path string) {
-		err := os.RemoveAll(path)
-		if err != nil {
-			fmt.Printf("error removing temporary directory %s: %v", path, err)
-		}
-	}(dir)
 
-	db, err := sql.Open("libsql", "file:"+dir+"/test.db")
-	if err != nil {
-		return err
+	encryptionKey := os.Getenv("ENCRYPTION_KEY")
+	if encryptionKey == "" {
+		log.Println("ENCRYPTION_KEY environment variable is not set, using unencrypted database")
 	}
+
+	db, initDbError := storage.InitializeDatabase(dbPath, encryptionKey)
+
+	if initDbError != nil {
+		return fmt.Errorf("failed to initialize database: %w", initDbError)
+	}
+
+	log.Println("Database initialized successfully")
+
+	// Initialize internal services here
+
+	// Run discord logic here
+
+	log.Println("Application started successfully")
+
 	defer func() {
 		if closeError := db.Close(); closeError != nil {
 			fmt.Println("Error closing database", closeError)
@@ -35,50 +41,6 @@ func run() (err error) {
 		}
 	}()
 
-	_, err = db.Exec("CREATE TABLE test (id INTEGER PRIMARY KEY, name TEXT)")
-	if err != nil {
-		return err
-	}
-
-	for i := 0; i < 10; i++ {
-		_, err = db.Exec(fmt.Sprintf("INSERT INTO test (id, name) VALUES (%d, 'test-%d')", i, i))
-		if err != nil {
-			return err
-		}
-	}
-
-	rows, err := db.Query("SELECT * FROM test")
-	if err != nil {
-		return err
-	}
-	defer func() {
-		if closeError := rows.Close(); closeError != nil {
-			fmt.Println("Error closing rows", closeError)
-			if err == nil {
-				err = closeError
-			}
-		}
-	}()
-
-	i := 0
-	for rows.Next() {
-		var id int
-		var name string
-		err = rows.Scan(&id, &name)
-		if err != nil {
-			return err
-		}
-		if id != i {
-			return fmt.Errorf("expected id %d, got %d", i, id)
-		}
-		if name != fmt.Sprintf("test-%d", i) {
-			return fmt.Errorf("expected name %s, got %s", fmt.Sprintf("test-%d", i), name)
-		}
-		i++
-	}
-	if rows.Err() != nil {
-		return rows.Err()
-	}
 	return nil
 }
 
@@ -86,6 +48,4 @@ func main() {
 	if err := run(); err != nil {
 		log.Fatalf("application failed to start: %v", err)
 	}
-
-	log.Println("application started successfully")
 }
