@@ -28,7 +28,7 @@ func TestCreatePoll(t *testing.T) {
 		}
 	}
 
-	if !poll.IsOpen {
+	if poll.Status != Open {
 		t.Error("Expected poll to be open, but it was closed")
 	}
 
@@ -60,7 +60,7 @@ func TestClosePoll(t *testing.T) {
 	if err != nil {
 		t.Fatal("CreatePoll returned an unexpected error:", err)
 	}
-	if !poll.IsOpen {
+	if poll.Status != Open {
 		t.Fatal("Expected poll to be open after creation, but it was closed")
 	}
 
@@ -71,7 +71,7 @@ func TestClosePoll(t *testing.T) {
 		t.Fatal("GetPollById returned an unexpected error:", updateError)
 	}
 
-	if updatedPoll.IsOpen {
+	if updatedPoll.Status != Closed {
 		t.Error("Expected poll to be closed after ClosePoll, but it was still open")
 	}
 }

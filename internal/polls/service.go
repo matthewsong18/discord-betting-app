@@ -26,7 +26,7 @@ func (s *service) CreatePoll(title string, options []string) (*Poll, error) {
 		ID:      uuid.New().String(),
 		Title:   title,
 		Options: options,
-		IsOpen:  true,
+		Status:  Open,
 		Outcome: -1, // -1 indicates no outcome selected yet
 	}
 
@@ -46,7 +46,7 @@ func notExactlyTwo(options []string) bool {
 func (s *service) ClosePoll(pollID string) {
 	for i, storedPoll := range s.pollList {
 		if storedPoll.ID == pollID {
-			s.pollList[i].IsOpen = false
+			s.pollList[i].Status = Closed
 			return
 		}
 	}

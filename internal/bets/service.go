@@ -27,7 +27,7 @@ func (betService *service) CreateBet(pollID string, userID string, selectedOptio
 		return nil, err
 	}
 
-	if poll.IsOpen == false {
+	if poll.Status == polls.Closed {
 		return nil, errors.New("cannot bet on a closed poll")
 	}
 
