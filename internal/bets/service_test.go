@@ -119,7 +119,7 @@ func TestGetBetOutcome(t *testing.T) {
 		t.Fatal("CreateBet returned an unexpected error:", err1)
 	}
 
-	if bet.BetStatus != StatusPending {
+	if bet.BetStatus != Pending {
 		t.Fatalf("Expected bet status to be 'PENDING', but got '%s'", bet.BetStatus)
 	}
 
@@ -136,7 +136,7 @@ func TestGetBetOutcome(t *testing.T) {
 		t.Fatal("GetBet returned an unexpected error:", err2)
 	}
 
-	if bet.BetStatus != StatusWon {
+	if bet.BetStatus != Won {
 		t.Errorf("Expected bet status to be 'WON', but got '%s'", bet.BetStatus)
 	}
 

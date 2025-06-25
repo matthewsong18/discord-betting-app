@@ -41,7 +41,7 @@ func (betService *service) CreateBet(pollID string, userID string, selectedOptio
 		PollId:              pollID,
 		UserId:              userID,
 		SelectedOptionIndex: selectedOptionIndex,
-		BetStatus:           StatusPending,
+		BetStatus:           Pending,
 	}
 
 	// Add the bet to the poll's bet list
@@ -75,9 +75,9 @@ func (betService *service) UpdateBetsByPollId(poll polls.Poll) {
 	for i, bet := range betService.betList {
 		if bet.PollId == poll.ID {
 			if bet.SelectedOptionIndex == poll.Outcome {
-				betService.betList[i].BetStatus = StatusWon
+				betService.betList[i].BetStatus = Won
 			} else {
-				betService.betList[i].BetStatus = StatusLost
+				betService.betList[i].BetStatus = Lost
 			}
 		}
 	}

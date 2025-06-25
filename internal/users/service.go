@@ -37,11 +37,11 @@ func (service service) GetWinLoss(userID string) (*WinLoss, error) {
 
 	for _, bet := range betList {
 		switch bet.BetStatus {
-		case bets.StatusWon:
+		case bets.Won:
 			winLoss.Wins++
-		case bets.StatusLost:
+		case bets.Lost:
 			winLoss.Losses++
-		case bets.StatusPending:
+		case bets.Pending:
 			continue
 		}
 	}

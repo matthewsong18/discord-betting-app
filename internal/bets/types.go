@@ -3,18 +3,18 @@ package bets
 type BetStatus int
 
 const (
-	StatusPending BetStatus = iota
-	StatusWon
-	StatusLost
+	Pending BetStatus = iota
+	Won
+	Lost
 )
 
 func (bs BetStatus) String() string {
 	switch bs {
-	case StatusPending:
+	case Pending:
 		return "PENDING"
-	case StatusWon:
+	case Won:
 		return "WON"
-	case StatusLost:
+	case Lost:
 		return "LOST"
 	default:
 		return "UNKNOWN"
