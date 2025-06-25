@@ -31,6 +31,7 @@ func InitializeDatabase(dbPath, encryptionKey string) (*sql.DB, error) {
 			return nil, fmt.Errorf("failed to execute schema statement: %w", err)
 		}
 	}
+	log.Println("Schema created successfully!")
 
 	return db, nil
 }
