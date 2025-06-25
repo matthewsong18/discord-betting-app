@@ -7,7 +7,7 @@ import (
 	"testing"
 )
 
-// Creates a temporary database for testing user repository.
+// Creates a temporary database for testing user libsqlRepository.
 func setupTestDB(t *testing.T) (*sql.DB, func()) {
 	t.Helper()
 
@@ -37,7 +37,7 @@ func TestSaveAndGet(t *testing.T) {
 	db, teardown := setupTestDB(t)
 	t.Cleanup(teardown)
 
-	repo := NewRepository(db)
+	repo := NewLibsqlRepository(db)
 
 	user := &User{
 		ID:        "test-id",
@@ -62,7 +62,7 @@ func TestGetByDiscordID(t *testing.T) {
 	db, teardown := setupTestDB(t)
 	t.Cleanup(teardown)
 
-	repo := NewRepository(db)
+	repo := NewLibsqlRepository(db)
 
 	user := &User{
 		ID:        "test-id",
@@ -88,7 +88,7 @@ func TestDelete(t *testing.T) {
 	db, teardown := setupTestDB(t)
 	t.Cleanup(teardown)
 
-	repo := NewRepository(db)
+	repo := NewLibsqlRepository(db)
 
 	user := &User{
 		ID:        "test-id",

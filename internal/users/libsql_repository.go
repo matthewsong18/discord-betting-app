@@ -6,15 +6,15 @@ import (
 	"fmt"
 )
 
-type repository struct {
+type libsqlRepository struct {
 	db *sql.DB
 }
 
-func NewRepository(db *sql.DB) UserRepository {
-	return &repository{db}
+func NewLibsqlRepository(db *sql.DB) UserRepository {
+	return &libsqlRepository{db}
 }
 
-func (repo *repository) Save(user *User) error {
+func (repo *libsqlRepository) Save(user *User) error {
 	query := `INSERT INTO users (id, discord_id) VALUES (?, ?)`
 	_, err := repo.db.Exec(query, user.ID, user.DiscordID)
 	if err != nil {
@@ -24,7 +24,7 @@ func (repo *repository) Save(user *User) error {
 	return nil
 }
 
-func (repo *repository) GetByID(id string) (*User, error) {
+func (repo *libsqlRepository) GetByID(id string) (*User, error) {
 	query := `SELECT id, discord_id FROM users WHERE id = ?`
 	row := repo.db.QueryRow(query, id)
 
@@ -39,7 +39,7 @@ func (repo *repository) GetByID(id string) (*User, error) {
 	return &user, nil
 }
 
-func (repo *repository) GetByDiscordID(discordID string) (*User, error) {
+func (repo *libsqlRepository) GetByDiscordID(discordID string) (*User, error) {
 	query := `SELECT id, discord_id FROM users WHERE discord_id = ?`
 	row := repo.db.QueryRow(query, discordID)
 
@@ -54,7 +54,7 @@ func (repo *repository) GetByDiscordID(discordID string) (*User, error) {
 	return &user, nil
 }
 
-func (repo *repository) Delete(discordID string) error {
+func (repo *libsqlRepository) Delete(discordID string) error {
 	query := "DELETE FROM users WHERE discord_id = ?"
 	result, err := repo.db.Exec(query, discordID)
 	if err != nil {
@@ -73,4 +73,4 @@ func (repo *repository) Delete(discordID string) error {
 	return nil
 }
 
-var _ UserRepository = (*repository)(nil)
+var _ UserRepository = (*libsqlRepository)(nil)
