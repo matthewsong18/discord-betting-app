@@ -30,8 +30,12 @@ func (repo memoryRepository) GetByID(id string) (*User, error) {
 }
 
 func (repo memoryRepository) GetByDiscordID(discordID string) (*User, error) {
-	//TODO implement me
-	panic("implement me")
+	for i, user := range repo.users {
+		if user.DiscordID == discordID {
+			return repo.users[i], nil
+		}
+	}
+	return nil, errors.New("user not found")
 }
 
 func (repo memoryRepository) Delete(discordID string) error {
