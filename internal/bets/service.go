@@ -3,6 +3,7 @@ package bets
 import (
 	"betting-discord-bot/internal/polls"
 	"errors"
+	"fmt"
 )
 
 type service struct {
@@ -71,7 +72,12 @@ func (betService *service) GetBet(pollID string, userID string) (*Bet, error) {
 	return nil, errors.New("bet not found for the specified poll and user")
 }
 
-func (betService *service) UpdateBetsByPollId(poll polls.Poll) {
+func (betService *service) UpdateBetsByPollId(pollID string) error {
+	poll, err := betService.pollService.GetPollById(pollID)
+	if err != nil {
+		return fmt.Errorf("failed to get poll by ID: %w", err)
+	}
+
 	for i, bet := range betService.betList {
 		if bet.PollId == poll.ID {
 			if bet.SelectedOptionIndex == poll.Outcome {
@@ -81,6 +87,7 @@ func (betService *service) UpdateBetsByPollId(poll polls.Poll) {
 			}
 		}
 	}
+	return nil
 }
 
 func (betService *service) GetBetsFromUser(userID string) ([]Bet, error) {

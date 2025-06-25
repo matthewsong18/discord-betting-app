@@ -6,7 +6,8 @@ import (
 )
 
 func TestCreateBet(t *testing.T) {
-	pollService := polls.NewService()
+	pollMemoryRepo := polls.NewMemoryRepository()
+	pollService := polls.NewService(pollMemoryRepo)
 	betService := NewService(pollService)
 
 	poll, err := pollService.CreatePoll("Test Poll", []string{"Option 1", "Option 2"})
@@ -37,7 +38,8 @@ func TestCreateBet(t *testing.T) {
 }
 
 func TestInvalidOption(t *testing.T) {
-	pollService := polls.NewService()
+	pollMemoryRepo := polls.NewMemoryRepository()
+	pollService := polls.NewService(pollMemoryRepo)
 	betService := NewService(pollService)
 	pollId := "12345"
 	userId := "12345"
@@ -54,7 +56,8 @@ func TestInvalidOption(t *testing.T) {
 }
 
 func TestPreventingMultipleBetsPerPoll(t *testing.T) {
-	pollService := polls.NewService()
+	pollMemoryRepo := polls.NewMemoryRepository()
+	pollService := polls.NewService(pollMemoryRepo)
 	betService := NewService(pollService)
 
 	poll, _ := pollService.CreatePoll("Test Poll", []string{"Option 1", "Option 2"})
@@ -79,14 +82,18 @@ func TestPreventingMultipleBetsPerPoll(t *testing.T) {
 }
 
 func TestCannotBetOnClosedPoll(t *testing.T) {
-	pollService := polls.NewService()
+	pollMemoryRepo := polls.NewMemoryRepository()
+	pollService := polls.NewService(pollMemoryRepo)
 	betService := NewService(pollService)
 
 	poll, err := pollService.CreatePoll("Test Poll", []string{"Option 1", "Option 2"})
 	if err != nil {
 		t.Fatal("Failed to create poll:", err)
 	}
-	pollService.ClosePoll(poll.ID)
+
+	if err := pollService.ClosePoll(poll.ID); err != nil {
+		t.Fatal("Failed to close poll:", err)
+	}
 
 	// Attempt to create a bet on a closed poll
 	_, err = betService.CreateBet(poll.ID, "12345", 0)
@@ -103,7 +110,8 @@ func TestCannotBetOnClosedPoll(t *testing.T) {
 func TestGetBetOutcome(t *testing.T) {
 	// Check if the bet outcome is correctly retrieved
 
-	pollService := polls.NewService()
+	pollMemoryRepo := polls.NewMemoryRepository()
+	pollService := polls.NewService(pollMemoryRepo)
 	betService := NewService(pollService)
 	poll, err := pollService.CreatePoll("Test Poll", []string{"Option 1", "Option 2"})
 	if err != nil {
@@ -123,13 +131,18 @@ func TestGetBetOutcome(t *testing.T) {
 		t.Fatalf("Expected bet status to be 'PENDING', but got '%s'", bet.BetStatus)
 	}
 
-	pollService.ClosePoll(poll.ID)
+	if err := pollService.ClosePoll(poll.ID); err != nil {
+		t.Fatal("ClosePoll returned an unexpected error:", err)
+	}
+
 	err = pollService.SelectOutcome(poll.ID, selectedOptionIndex)
 	if err != nil {
 		t.Fatal("SelectOutcome returned an unexpected error:", err)
 	}
 
-	betService.UpdateBetsByPollId(*poll)
+	if err := betService.UpdateBetsByPollId(poll.ID); err != nil {
+		t.Fatal("UpdateBetsByPollId returned an unexpected error:", err)
+	}
 	bet, err2 := betService.GetBet(pollId, userId)
 
 	if err2 != nil {
@@ -146,7 +159,8 @@ func TestGetBetOutcome(t *testing.T) {
 }
 
 func TestGettingUserBets(t *testing.T) {
-	pollService := polls.NewService()
+	pollMemoryRepo := polls.NewMemoryRepository()
+	pollService := polls.NewService(pollMemoryRepo)
 	betService := NewService(pollService)
 
 	poll, createPollErr := pollService.CreatePoll("Test Poll", []string{"Option 1", "Option 2"})

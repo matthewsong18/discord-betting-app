@@ -3,7 +3,8 @@ package polls
 import "testing"
 
 func TestCreatePoll(t *testing.T) {
-	service := NewService()
+	pollMemoryRepo := NewMemoryRepository()
+	service := NewService(pollMemoryRepo)
 
 	title := "Which team will win first map?"
 	options := []string{"Team A", "Team B"}
@@ -35,7 +36,8 @@ func TestCreatePoll(t *testing.T) {
 }
 
 func TestExactlyTwoOptions(t *testing.T) {
-	service := NewService()
+	pollMemoryRepo := NewMemoryRepository()
+	service := NewService(pollMemoryRepo)
 
 	title := "Which team will win first map?"
 	options := []string{"Team A", "Team B", "Team C"}
@@ -53,7 +55,8 @@ func TestExactlyTwoOptions(t *testing.T) {
 }
 
 func TestClosePoll(t *testing.T) {
-	service := NewService()
+	pollMemoryRepo := NewMemoryRepository()
+	service := NewService(pollMemoryRepo)
 
 	poll, err := createDefaultTestPoll(service)
 
@@ -64,7 +67,9 @@ func TestClosePoll(t *testing.T) {
 		t.Fatal("Expected poll to be open after creation, but it was closed")
 	}
 
-	service.ClosePoll(poll.ID)
+	if err := service.ClosePoll(poll.ID); err != nil {
+		t.Fatal("ClosePoll returned an unexpected error:", err)
+	}
 
 	updatedPoll, updateError := service.GetPollById(poll.ID)
 	if updateError != nil {
@@ -78,7 +83,8 @@ func TestClosePoll(t *testing.T) {
 
 func TestSelectOutcome(t *testing.T) {
 	// Setup
-	service := NewService()
+	pollMemoryRepo := NewMemoryRepository()
+	service := NewService(pollMemoryRepo)
 
 	poll, err := createDefaultTestPoll(service)
 	if err != nil {
@@ -92,13 +98,19 @@ func TestSelectOutcome(t *testing.T) {
 		t.Fatal("SelectOutcome returned an unexpected error", err)
 	}
 
+	// Get the updated poll
+	poll, err = service.GetPollById(poll.ID)
+	if err != nil {
+		t.Fatal("GetPollById returned an unexpected error:", err)
+	}
+
 	// Verify the outcome
 	if poll.Outcome != teamAIndex {
 		t.Errorf("Expected selected outcome to be '%d', but got '%d'", teamAIndex, poll.Outcome)
 	}
 }
 
-func createDefaultTestPoll(service PollService) (*Poll, error) {
+func createDefaultTestPoll(service PollService) (Poll, error) {
 	title := "Which team will win first map?"
 	options := []string{"Team A", "Team B"}
 	poll, err := service.CreatePoll(title, options)
@@ -107,7 +119,8 @@ func createDefaultTestPoll(service PollService) (*Poll, error) {
 
 func TestGetPollById(t *testing.T) {
 	// Testing that the GetPollById method retrieves the exact poll that was created by CreatePoll instead of a copy.
-	pollService := NewService()
+	pollMemoryRepo := NewMemoryRepository()
+	pollService := NewService(pollMemoryRepo)
 
 	poll, err := createDefaultTestPoll(pollService)
 	if err != nil {
@@ -119,7 +132,7 @@ func TestGetPollById(t *testing.T) {
 		t.Fatal("GetPollById returned an unexpected error:", err)
 	}
 
-	if retrievedPoll != poll {
+	if retrievedPoll.ID != poll.ID {
 		t.Errorf("Expected retrieved poll to be equal to created poll, but they differ")
 	}
 }

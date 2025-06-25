@@ -1,10 +1,10 @@
 package polls
 
 type PollService interface {
-	CreatePoll(title string, options []string) (*Poll, error)
-	ClosePoll(pollID string)
+	CreatePoll(title string, options []string) (Poll, error)
+	ClosePoll(pollID string) error
 	SelectOutcome(pollID string, outcomeIndex int) error
-	GetPollById(id string) (*Poll, error)
+	GetPollById(id string) (Poll, error)
 }
 
 type PollRepository interface {

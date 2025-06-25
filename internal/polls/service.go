@@ -6,54 +6,60 @@ import (
 	"github.com/google/uuid"
 )
 
+const NoOutcomeYet = -1
+
 type service struct {
-	pollList []Poll
+	pollRepo PollRepository
 }
 
-func NewService() PollService {
+func NewService(pollRepo PollRepository) PollService {
 	return &service{
-		pollList: make([]Poll, 0),
+		pollRepo,
 	}
 }
 
-func (s *service) CreatePoll(title string, options []string) (*Poll, error) {
+func (s *service) CreatePoll(title string, options []string) (Poll, error) {
 	if notExactlyTwo(options) {
-		return nil, errors.New("poll must have exactly two options")
+		return Poll{}, errors.New("poll must have exactly two options")
 	}
 
 	// Create a new poll
-	poll := &Poll{
+	poll := Poll{
 		ID:      uuid.New().String(),
 		Title:   title,
 		Options: options,
 		Status:  Open,
-		Outcome: -1, // -1 indicates no outcome selected yet
+		Outcome: NoOutcomeYet,
 	}
 
-	// Add a copy of the poll to the service's poll list
-	s.pollList = append(s.pollList, *poll)
+	err := s.pollRepo.Save(poll)
+	if err != nil {
+		return Poll{}, err
+	}
 
-	// Get the poll copy added to the list
-	pointerToPollCopy := &s.pollList[len(s.pollList)-1]
-
-	return pointerToPollCopy, nil
+	return poll, nil
 }
 
 func notExactlyTwo(options []string) bool {
 	return len(options) != 2
 }
 
-func (s *service) ClosePoll(pollID string) {
-	for i, storedPoll := range s.pollList {
-		if storedPoll.ID == pollID {
-			s.pollList[i].Status = Closed
-			return
-		}
+func (s *service) ClosePoll(pollID string) error {
+	poll, err := s.GetPollById(pollID)
+	if err != nil {
+		return fmt.Errorf("failed to get poll by ID: %w", err)
 	}
+
+	poll.Status = Closed
+	if err := s.pollRepo.Update(poll); err != nil {
+		return fmt.Errorf("failed to update poll status: %w", err)
+	}
+
+	return nil
 }
 
 func (s *service) SelectOutcome(pollID string, outcomeIndex int) error {
-	poll, err := s.GetPollById(pollID)
+	poll, err := s.pollRepo.GetById(pollID)
 	if err != nil {
 		return fmt.Errorf("failed to get poll by ID: %w", err)
 	}
@@ -64,19 +70,20 @@ func (s *service) SelectOutcome(pollID string, outcomeIndex int) error {
 
 	poll.Outcome = outcomeIndex
 
+	if err := s.pollRepo.Update(poll); err != nil {
+		return fmt.Errorf("failed to update poll outcome: %w", err)
+	}
+
 	return nil
 }
 
-func (s *service) GetPollById(id string) (*Poll, error) {
-	for i, poll := range s.pollList {
-		// Skip if the poll ID does not match
-		if poll.ID != id {
-			continue
-		}
-
-		return &s.pollList[i], nil
+func (s *service) GetPollById(id string) (Poll, error) {
+	poll, err := s.pollRepo.GetById(id)
+	if err != nil {
+		return Poll{}, fmt.Errorf("failed to get poll by ID: %w", err)
 	}
-	return nil, errors.New("poll not found")
+
+	return poll, nil
 }
 
 var _ PollService = (*service)(nil)

@@ -7,7 +7,8 @@ import (
 )
 
 func TestCreateUser(t *testing.T) {
-	pollService := polls.NewService()
+	pollMemoryRepo := polls.NewMemoryRepository()
+	pollService := polls.NewService(pollMemoryRepo)
 	betService := bets.NewService(pollService)
 	userRepo := NewMemoryRepository()
 	userService := NewService(userRepo, betService)
@@ -24,7 +25,8 @@ func TestCreateUser(t *testing.T) {
 
 func TestGetUserWinLoss(t *testing.T) {
 	// ARRANGE (Outer Scope)
-	pollService := polls.NewService()
+	pollMemoryRepo := polls.NewMemoryRepository()
+	pollService := polls.NewService(pollMemoryRepo)
 	betService := bets.NewService(pollService)
 	userRepo := NewMemoryRepository()
 	userService := NewService(userRepo, betService)
@@ -60,7 +62,9 @@ func TestGetUserWinLoss(t *testing.T) {
 		if pollOutcomeErr != nil {
 			t.Fatal("SelectOutcome returned an unexpected error: ", pollOutcomeErr)
 		}
-		betService.UpdateBetsByPollId(*poll)
+		if err := betService.UpdateBetsByPollId(poll.ID); err != nil {
+			t.Fatal("UpdateBetsByPollId returned an unexpected error: ", err)
+		}
 
 		// ACT
 		winLoss, err := userService.GetWinLoss(user.ID)
@@ -86,7 +90,9 @@ func TestGetUserWinLoss(t *testing.T) {
 		if pollOutcomeErr != nil {
 			t.Fatal("SelectOutcome returned an unexpected error: ", pollOutcomeErr)
 		}
-		betService.UpdateBetsByPollId(*poll)
+		if err := betService.UpdateBetsByPollId(poll.ID); err != nil {
+			t.Fatal("UpdateBetsByPollId returned an unexpected error: ", err)
+		}
 
 		// ACT
 		winLoss, err := userService.GetWinLoss(user.ID)
