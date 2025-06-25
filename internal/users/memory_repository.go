@@ -1,15 +1,24 @@
 package users
 
+import "errors"
+
 type memoryRepository struct {
+	users map[string]*User
 }
 
 func NewMemoryRepository() UserRepository {
-	return memoryRepository{}
+	return memoryRepository{
+		users: make(map[string]*User),
+	}
 }
 
 func (repo memoryRepository) Save(user *User) error {
-	//TODO implement me
-	panic("implement me")
+	if user == nil {
+		return errors.New("user is nil")
+	}
+
+	repo.users[user.ID] = user
+	return nil
 }
 
 func (repo memoryRepository) GetByID(id string) (*User, error) {
