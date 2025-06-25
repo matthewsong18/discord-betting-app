@@ -7,11 +7,13 @@ import (
 )
 
 type service struct {
+	userRepo   UserRepository
 	betService bets.BetService
 }
 
-func NewService(betService bets.BetService) UserService {
+func NewService(userRepo UserRepository, betService bets.BetService) UserService {
 	return &service{
+		userRepo:   userRepo,
 		betService: betService,
 	}
 }
