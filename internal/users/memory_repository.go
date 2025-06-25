@@ -22,8 +22,11 @@ func (repo memoryRepository) Save(user *User) error {
 }
 
 func (repo memoryRepository) GetByID(id string) (*User, error) {
-	//TODO implement me
-	panic("implement me")
+	user, exists := repo.users[id]
+	if !exists {
+		return nil, errors.New("user not found")
+	}
+	return user, nil
 }
 
 func (repo memoryRepository) GetByDiscordID(discordID string) (*User, error) {
