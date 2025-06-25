@@ -7,7 +7,7 @@ type memoryRepository struct {
 }
 
 func NewMemoryRepository() UserRepository {
-	return memoryRepository{
+	return &memoryRepository{
 		users: make(map[string]*User),
 	}
 }

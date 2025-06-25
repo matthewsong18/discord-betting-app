@@ -23,6 +23,12 @@ func (service service) CreateUser(discordID string) (*User, error) {
 		ID:        uuid.NewString(),
 		DiscordID: discordID,
 	}
+
+	err := service.userRepo.Save(user)
+	if err != nil {
+		return nil, fmt.Errorf("could not save user: %w", err)
+	}
+
 	return user, nil
 }
 
