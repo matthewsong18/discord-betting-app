@@ -9,7 +9,7 @@ import (
 func TestCreateUser(t *testing.T) {
 	pollMemoryRepo := polls.NewMemoryRepository()
 	pollService := polls.NewService(pollMemoryRepo)
-	betService := bets.NewService(pollService)
+	betService := bets.NewService(pollService, nil)
 	userRepo := NewMemoryRepository()
 	userService := NewService(userRepo, betService)
 
@@ -27,7 +27,8 @@ func TestGetUserWinLoss(t *testing.T) {
 	// ARRANGE (Outer Scope)
 	pollMemoryRepo := polls.NewMemoryRepository()
 	pollService := polls.NewService(pollMemoryRepo)
-	betService := bets.NewService(pollService)
+	betRepo := bets.NewMemoryRepository()
+	betService := bets.NewService(pollService, betRepo)
 	userRepo := NewMemoryRepository()
 	userService := NewService(userRepo, betService)
 

@@ -8,13 +8,13 @@ import (
 
 type service struct {
 	pollService polls.PollService
-	betList     []Bet
+	betRepo     BetRepository
 }
 
-func NewService(pollService polls.PollService) BetService {
+func NewService(pollService polls.PollService, betRepo BetRepository) BetService {
 	return &service{
 		pollService: pollService,
-		betList:     make([]Bet, 0),
+		betRepo:     betRepo,
 	}
 }
 
@@ -32,9 +32,7 @@ func (betService *service) CreateBet(pollID string, userID string, selectedOptio
 		return nil, errors.New("cannot bet on a closed poll")
 	}
 
-	err = checkIfUserAlreadyBetOnPoll(pollID, userID, betService)
-
-	if err != nil {
+	if err := checkIfUserAlreadyBetOnPoll(pollID, userID, betService); err != nil {
 		return nil, err
 	}
 
@@ -45,31 +43,31 @@ func (betService *service) CreateBet(pollID string, userID string, selectedOptio
 		BetStatus:           Pending,
 	}
 
-	// Add the bet to the poll's bet list
-	betService.betList = append(betService.betList, *bet)
+	if err := betService.betRepo.Save(bet); err != nil {
+		return nil, fmt.Errorf("failed to save bet: %w", err)
+	}
 
 	return bet, nil
 }
 
 func checkIfUserAlreadyBetOnPoll(pollId string, userId string, s *service) error {
-	for _, bet := range s.betList {
-		// Skip if the bet is not for the specified poll or user
-		if bet.PollId != pollId || bet.UserId != userId {
-			continue
-		}
-
-		return errors.New("user bet already exists for this poll")
+	bet, err := s.betRepo.GetByPollIdAndUserId(pollId, userId)
+	if err != nil {
+		return nil
 	}
+	if bet != nil {
+		return errors.New("user already placed a bet on this poll")
+	}
+
 	return nil
 }
 
 func (betService *service) GetBet(pollID string, userID string) (*Bet, error) {
-	for _, bet := range betService.betList {
-		if bet.PollId == pollID && bet.UserId == userID {
-			return &bet, nil
-		}
+	if bet, err := betService.betRepo.GetByPollIdAndUserId(pollID, userID); err != nil {
+		return nil, fmt.Errorf("failed to get bet: %w", err)
+	} else {
+		return bet, nil
 	}
-	return nil, errors.New("bet not found for the specified poll and user")
 }
 
 func (betService *service) UpdateBetsByPollId(pollID string) error {
@@ -78,25 +76,31 @@ func (betService *service) UpdateBetsByPollId(pollID string) error {
 		return fmt.Errorf("failed to get poll by ID: %w", err)
 	}
 
-	for i, bet := range betService.betList {
-		if bet.PollId == poll.ID {
-			if bet.SelectedOptionIndex == poll.Outcome {
-				betService.betList[i].BetStatus = Won
-			} else {
-				betService.betList[i].BetStatus = Lost
-			}
+	betList, err := betService.betRepo.GetBetsByPollId(pollID)
+	if err != nil {
+		return fmt.Errorf("failed to get bets for poll: %w", err)
+	}
+
+	pollResult := poll.Outcome
+	for _, bet := range betList {
+		if bet.SelectedOptionIndex == pollResult {
+			bet.BetStatus = Won
+		} else {
+			bet.BetStatus = Lost
+		}
+		
+		if err := betService.betRepo.UpdateBet(&bet); err != nil {
+			return fmt.Errorf("failed to update bet: %w", err)
 		}
 	}
+
 	return nil
 }
 
 func (betService *service) GetBetsFromUser(userID string) ([]Bet, error) {
-	var userBets []Bet
-
-	for _, bet := range betService.betList {
-		if bet.UserId == userID {
-			userBets = append(userBets, bet)
-		}
+	userBets, err := betService.betRepo.GetBetsFromUser(userID)
+	if err != nil {
+		return nil, fmt.Errorf("failed to get bets for user: %w", err)
 	}
 
 	return userBets, nil

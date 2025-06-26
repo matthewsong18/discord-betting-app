@@ -27,3 +27,8 @@ type Bet struct {
 	SelectedOptionIndex int
 	BetStatus           BetStatus
 }
+
+type BetKey struct {
+	PollId string
+	UserId string
+}
