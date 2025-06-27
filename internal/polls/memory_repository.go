@@ -3,18 +3,18 @@ package polls
 import "errors"
 
 type memoryRepository struct {
-	polls map[string]Poll
+	polls map[string]*Poll
 }
 
 func NewMemoryRepository() PollRepository {
 	return &memoryRepository{
-		polls: make(map[string]Poll),
+		polls: make(map[string]*Poll),
 	}
 }
 
 var ErrPollNotFound = errors.New("poll not found")
 
-func (m memoryRepository) Save(poll Poll) error {
+func (m memoryRepository) Save(poll *Poll) error {
 	if _, exists := m.polls[poll.ID]; exists {
 		return errors.New("poll already exists")
 	}
@@ -22,14 +22,14 @@ func (m memoryRepository) Save(poll Poll) error {
 	return nil
 }
 
-func (m memoryRepository) GetById(id string) (Poll, error) {
+func (m memoryRepository) GetById(id string) (*Poll, error) {
 	if poll, exists := m.polls[id]; exists {
 		return poll, nil
 	}
-	return Poll{}, ErrPollNotFound
+	return nil, ErrPollNotFound
 }
 
-func (m memoryRepository) Update(poll Poll) error {
+func (m memoryRepository) Update(poll *Poll) error {
 	if _, exists := m.polls[poll.ID]; !exists {
 		return ErrPollNotFound
 	}

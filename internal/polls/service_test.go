@@ -110,7 +110,7 @@ func TestSelectOutcome(t *testing.T) {
 	}
 }
 
-func createDefaultTestPoll(service PollService) (Poll, error) {
+func createDefaultTestPoll(service PollService) (*Poll, error) {
 	title := "Which team will win first map?"
 	options := []string{"Team A", "Team B"}
 	poll, err := service.CreatePoll(title, options)

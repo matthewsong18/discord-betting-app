@@ -18,13 +18,13 @@ func NewService(pollRepo PollRepository) PollService {
 	}
 }
 
-func (s *service) CreatePoll(title string, options []string) (Poll, error) {
+func (s *service) CreatePoll(title string, options []string) (*Poll, error) {
 	if notExactlyTwo(options) {
-		return Poll{}, errors.New("poll must have exactly two options")
+		return nil, errors.New("poll must have exactly two options")
 	}
 
 	// Create a new poll
-	poll := Poll{
+	poll := &Poll{
 		ID:      uuid.New().String(),
 		Title:   title,
 		Options: options,
@@ -34,7 +34,7 @@ func (s *service) CreatePoll(title string, options []string) (Poll, error) {
 
 	err := s.pollRepo.Save(poll)
 	if err != nil {
-		return Poll{}, err
+		return nil, err
 	}
 
 	return poll, nil
@@ -77,10 +77,10 @@ func (s *service) SelectOutcome(pollID string, outcomeIndex int) error {
 	return nil
 }
 
-func (s *service) GetPollById(id string) (Poll, error) {
+func (s *service) GetPollById(id string) (*Poll, error) {
 	poll, err := s.pollRepo.GetById(id)
 	if err != nil {
-		return Poll{}, fmt.Errorf("failed to get poll by ID: %w", err)
+		return nil, fmt.Errorf("failed to get poll by ID: %w", err)
 	}
 
 	return poll, nil
