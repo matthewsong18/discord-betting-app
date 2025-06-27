@@ -103,7 +103,6 @@ func testPollRepository(t *testing.T, repo PollRepository) {
 	})
 
 	t.Run("it should update the poll", func(t *testing.T) {
-		t.Skip()
 		pollToUpdate := &Poll{
 			ID:     uuid.NewString(),
 			Title:  "Poll to Update",

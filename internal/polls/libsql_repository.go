@@ -126,8 +126,39 @@ func getFromOptionsTable(pollID string, repo *libSQLRepository) ([]string, error
 }
 
 func (repo *libSQLRepository) Update(poll *Poll) error {
-	//TODO implement me
-	panic("implement me")
+	query := "UPDATE polls SET title = ?, status = ? WHERE id = ?"
+	preparedStatement, prepareError := repo.db.Prepare(query)
+	if prepareError != nil {
+		return fmt.Errorf("error while preparing statement: %w", prepareError)
+	}
+
+	result, execErr := preparedStatement.Exec(poll.Title, poll.Status, poll.ID)
+	if execErr != nil {
+		return fmt.Errorf("error while executing statement: %w", execErr)
+	}
+
+	rowsAffected, _ := result.RowsAffected()
+	if rowsAffected == 0 {
+		return fmt.Errorf("no rows were affected by the update operation")
+	}
+
+	query = "UPDATE poll_options SET option_text = ? WHERE poll_id = ? AND option_index = ?"
+	preparedStatement, prepareError = repo.db.Prepare(query)
+	if prepareError != nil {
+		return fmt.Errorf("error while preparing statement for options: %w", prepareError)
+	}
+	for index, option := range poll.Options {
+		result, execErr := preparedStatement.Exec(option, poll.ID, index)
+		if execErr != nil {
+			return fmt.Errorf("error while executing statement for option %d: %w", index, execErr)
+		}
+		rowsAffected, _ := result.RowsAffected()
+		if rowsAffected == 0 {
+			return fmt.Errorf("no rows were affected by the update operation for option %d", index)
+		}
+	}
+
+	return nil
 }
 
 func (repo *libSQLRepository) Delete(pollID string) error {
