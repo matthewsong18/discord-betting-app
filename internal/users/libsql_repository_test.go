@@ -37,7 +37,7 @@ func TestSaveAndGet(t *testing.T) {
 	db, teardown := setupTestDB(t)
 	t.Cleanup(teardown)
 
-	repo := NewLibsqlRepository(db)
+	repo := NewLibSQLRepository(db)
 
 	user := &User{
 		ID:        "test-id",
@@ -62,7 +62,7 @@ func TestGetByDiscordID(t *testing.T) {
 	db, teardown := setupTestDB(t)
 	t.Cleanup(teardown)
 
-	repo := NewLibsqlRepository(db)
+	repo := NewLibSQLRepository(db)
 
 	user := &User{
 		ID:        "test-id",
@@ -88,7 +88,7 @@ func TestDelete(t *testing.T) {
 	db, teardown := setupTestDB(t)
 	t.Cleanup(teardown)
 
-	repo := NewLibsqlRepository(db)
+	repo := NewLibSQLRepository(db)
 
 	user := &User{
 		ID:        "test-id",

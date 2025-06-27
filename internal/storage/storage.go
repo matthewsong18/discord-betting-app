@@ -58,15 +58,8 @@ func buildSchema() []string {
 		`CREATE TABLE IF NOT EXISTS polls (
 			id TEXT PRIMARY KEY,
 			title TEXT,
-			is_open BOOLEAN,
-			outcome INTEGER
-		);`,
-		`CREATE TABLE IF NOT EXISTS bets (
-			id TEXT PRIMARY KEY,
-			poll_id TEXT,
-			user_id TEXT,
-			outcome_index INTEGER,
-			status TEXT
+			outcome INTEGER,
+			status INTEGER
 		);`,
 		`CREATE TABLE IF NOT EXISTS poll_options (
             poll_id TEXT,
@@ -74,6 +67,13 @@ func buildSchema() []string {
             option_text TEXT,
             PRIMARY KEY (poll_id, option_index)
         );`,
+		`CREATE TABLE IF NOT EXISTS bets (
+			id TEXT PRIMARY KEY,
+			poll_id TEXT,
+			user_id TEXT,
+			outcome_index INTEGER,
+			status TEXT
+		);`,
 		`CREATE TABLE IF NOT EXISTS users (
 			id TEXT PRIMARY KEY,
 			discord_id TEXT UNIQUE

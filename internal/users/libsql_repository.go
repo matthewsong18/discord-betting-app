@@ -10,7 +10,7 @@ type libsqlRepository struct {
 	db *sql.DB
 }
 
-func NewLibsqlRepository(db *sql.DB) UserRepository {
+func NewLibSQLRepository(db *sql.DB) UserRepository {
 	return &libsqlRepository{db}
 }
 
