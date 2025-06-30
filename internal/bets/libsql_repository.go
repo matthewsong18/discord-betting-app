@@ -52,8 +52,38 @@ func (repo libSQLRepository) GetByPollIdAndUserId(pollID string, userID string) 
 }
 
 func (repo libSQLRepository) GetBetsFromUser(userID string) ([]Bet, error) {
-	//TODO implement me
-	panic("implement me")
+	query := "SELECT poll_id, user_id, selected_option_index, bet_status FROM bets WHERE user_id = ?"
+	preparedStatement, preparedErr := repo.db.Prepare(query)
+	if preparedErr != nil {
+		return nil, fmt.Errorf("error while preparing get bets from user statement: %w", preparedErr)
+	}
+
+	rows, queryErr := preparedStatement.Query(userID)
+	if queryErr != nil {
+		return nil, fmt.Errorf("error while querying bets from user: %w", queryErr)
+	}
+	defer func(rows *sql.Rows) {
+		err := rows.Close()
+		if err != nil {
+			fmtErr := fmt.Errorf("failed to close bets rows: %w\n", err)
+			fmt.Println(fmtErr)
+		}
+	}(rows)
+
+	var bets []Bet
+	for rows.Next() {
+		var bet Bet
+		if scanErr := rows.Scan(&bet.PollId, &bet.UserId, &bet.SelectedOptionIndex, &bet.BetStatus); scanErr != nil {
+			return nil, fmt.Errorf("error while scanning bet: %w", scanErr)
+		}
+		bets = append(bets, bet)
+	}
+
+	if err := rows.Err(); err != nil {
+		return nil, fmt.Errorf("error while iterating over rows: %w", err)
+	}
+
+	return bets, nil
 }
 
 func (repo libSQLRepository) GetBetsByPollId(pollID string) ([]Bet, error) {
