@@ -3,6 +3,7 @@ package bets
 import (
 	"betting-discord-bot/internal/storage"
 	"os"
+	"slices"
 	"testing"
 )
 
@@ -79,5 +80,44 @@ func TestRepositories(t *testing.T) {
 				t.Errorf("Retrieved bet does not match original: got %+v, want %+v", retrievedBet, bet)
 			}
 		})
+
+		t.Run("it should get all bets from a user", func(t *testing.T) {
+			// ARRANGE: Setup database and repository.
+			repo, cleanup := test.setup(t)
+			t.Cleanup(cleanup)
+
+			// ACT: Create multiple bets for the same user.
+			userID := "user789"
+			bets := []Bet{
+				{PollId: "poll1", UserId: userID, SelectedOptionIndex: 0, BetStatus: Pending},
+				{PollId: "poll2", UserId: userID, SelectedOptionIndex: 1, BetStatus: Pending},
+				{PollId: "poll3", UserId: userID, SelectedOptionIndex: 0, BetStatus: Pending},
+			}
+			for _, bet := range bets {
+				if err := repo.Save(&bet); err != nil {
+					t.Fatalf("Failed to save bet: %v", err)
+				}
+			}
+
+			// ACT: Retrieve all bets for the user.
+			retrievedBets, retrieveErr := repo.GetBetsFromUser(userID)
+			if retrieveErr != nil {
+				t.Fatalf("Failed to get bets from user: %v", retrieveErr)
+			}
+
+			// ASSERT: Check that the retrieved bets match the original.
+			if len(retrievedBets) != len(bets) {
+				t.Fatalf("Expected %d bets for user %s, got %d", len(bets), userID, len(retrievedBets))
+			}
+
+			for i, bet := range retrievedBets {
+				if slices.Contains(bets, bet) {
+					continue
+				}
+
+				t.Errorf("Retrieved bet at index %d does not match original: got %+v, want %+v", i, bet, bets[i])
+			}
+		})
+
 	}
 }
