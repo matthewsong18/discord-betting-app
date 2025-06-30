@@ -162,6 +162,52 @@ func (repo *libSQLRepository) Update(poll *Poll) error {
 }
 
 func (repo *libSQLRepository) Delete(pollID string) error {
-	//TODO implement me
-	panic("implement me")
+	pollErr := deletePoll(pollID, repo)
+	if pollErr != nil {
+		return pollErr
+	}
+
+	pollOptionsErr := deletePollOptions(pollID, repo)
+	if pollOptionsErr != nil {
+		return pollOptionsErr
+	}
+
+	return nil
+}
+
+func deletePoll(pollID string, repo *libSQLRepository) error {
+	query := "DELETE FROM polls WHERE id = ?"
+	preparedStatement, prepareError := repo.db.Prepare(query)
+	if prepareError != nil {
+		return fmt.Errorf("error while preparing statement: %w", prepareError)
+	}
+
+	result, execErr := preparedStatement.Exec(pollID)
+	if execErr != nil {
+		return fmt.Errorf("error while executing delete statement: %w", execErr)
+	}
+
+	rowsAffected, _ := result.RowsAffected()
+	if rowsAffected == 0 {
+		return fmt.Errorf("no rows were affected by the delete operation for poll ID %s", pollID)
+	}
+	return nil
+}
+func deletePollOptions(pollID string, repo *libSQLRepository) error {
+	query := "DELETE FROM poll_options WHERE poll_id = ?"
+	preparedStatement, prepareError := repo.db.Prepare(query)
+	if prepareError != nil {
+		return fmt.Errorf("error while preparing statement for options: %w", prepareError)
+	}
+
+	result, execErr := preparedStatement.Exec(pollID)
+	if execErr != nil {
+		return fmt.Errorf("error while executing delete statement for options: %w", execErr)
+	}
+
+	rowsAffected, _ := result.RowsAffected()
+	if rowsAffected == 0 {
+		return fmt.Errorf("no rows were affected by the delete operation for options of poll ID %s", pollID)
+	}
+	return nil
 }

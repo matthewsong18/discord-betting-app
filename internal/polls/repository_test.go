@@ -107,6 +107,11 @@ func testPollRepository(t *testing.T, repo PollRepository) {
 			ID:     uuid.NewString(),
 			Title:  "Poll to Update",
 			Status: Open,
+			Options: []string{
+				"Option 1",
+				"Option 2",
+			},
+			Outcome: 0,
 		}
 
 		// ACT: Save the poll first
@@ -131,5 +136,41 @@ func testPollRepository(t *testing.T, repo PollRepository) {
 			t.Errorf("Expected updated poll title %q, but got %q", "Updated Poll Title", retrievedPoll.Title)
 		}
 
+	})
+
+	t.Run("it should delete the poll", func(t *testing.T) {
+		// ARRANGE: Create a new poll to delete
+		pollToDelete := &Poll{
+			ID:     uuid.NewString(),
+			Title:  "Poll to Delete",
+			Status: Open,
+			Options: []string{
+				"Option 1",
+				"Option 2",
+			},
+			Outcome: 0,
+		}
+
+		// ACT: Save the poll first
+		if err := repo.Save(pollToDelete); err != nil {
+			t.Fatalf("Save() returned an unexpected error: %v", err)
+		}
+
+		// ACT: Retrieve the poll to ensure it exists before deletion
+		_, err := repo.GetById(pollToDelete.ID)
+		if err != nil {
+			t.Fatalf("GetById() returned an unexpected error: %v", err)
+		}
+
+		// ACT: Delete the poll
+		if err := repo.Delete(pollToDelete.ID); err != nil {
+			t.Fatalf("Delete() returned an unexpected error: %v", err)
+		}
+
+		// ASSERT: Try to retrieve the deleted poll
+		_, err = repo.GetById(pollToDelete.ID)
+		if err == nil {
+			t.Fatal("Expected error when retrieving deleted poll, but got nil")
+		}
 	})
 }
