@@ -68,11 +68,11 @@ func buildSchema() []string {
             PRIMARY KEY (poll_id, option_index)
         );`,
 		`CREATE TABLE IF NOT EXISTS bets (
-			id TEXT PRIMARY KEY,
 			poll_id TEXT,
 			user_id TEXT,
-			outcome_index INTEGER,
-			status TEXT
+			selected_option_index INTEGER,
+			bet_status INTEGER,
+			PRIMARY KEY (poll_id, user_id)
 		);`,
 		`CREATE TABLE IF NOT EXISTS users (
 			id TEXT PRIMARY KEY,

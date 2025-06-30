@@ -2,6 +2,7 @@ package bets
 
 import (
 	"betting-discord-bot/internal/storage"
+	"os"
 	"testing"
 )
 
@@ -10,7 +11,6 @@ func TestRepositories(t *testing.T) {
 		name  string
 		setup func(t *testing.T) (repo BetRepository, cleanup func())
 	}{
-		// TODO: test cases
 		{
 			name: "InMemoryRepository",
 			setup: func(t *testing.T) (BetRepository, func()) {
@@ -33,6 +33,10 @@ func TestRepositories(t *testing.T) {
 				return repo, func() {
 					if err := db.Close(); err != nil {
 						t.Fatalf("Failed to close LibSqlRepository: %v", err)
+					}
+
+					if err := os.RemoveAll(dbPath); err != nil {
+						t.Fatalf("Failed to remove test database file %s: %v", dbPath, err)
 					}
 				}
 			},
