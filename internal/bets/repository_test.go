@@ -68,6 +68,7 @@ func TestBetRepositoryImplementations(t *testing.T) {
 		{"it should save and get a bet", testSaveAndGet},
 		{"it should get all bets from a user", testGetAllBetsFromUser},
 		{"it should get all bets from a poll", testGetAllBetsFromPoll},
+		{"it should update a bet", testUpdateBet},
 	}
 
 	// Loop through each implementation and run each test against it. Did this
@@ -162,5 +163,32 @@ func testGetAllBetsFromPoll(t *testing.T, repo BetRepository) {
 	// ASSERT
 	if len(retrievedBets) != len(bets) {
 		t.Fatalf("Expected %d bets for poll %s, got %d", len(bets), pollID, len(retrievedBets))
+	}
+}
+
+func testUpdateBet(t *testing.T, repo BetRepository) {
+	// ARRANGE
+	bet := &Bet{
+		PollId:    "poll123",
+		UserId:    "user456",
+		BetStatus: Pending,
+	}
+	if err := repo.Save(bet); err != nil {
+		t.Fatalf("Failed to save initial bet: %v", err)
+	}
+
+	// ACT
+	bet.BetStatus = Won
+	if err := repo.UpdateBet(bet); err != nil {
+		t.Fatalf("Failed to update bet: %v", err)
+	}
+
+	// ASSERT
+	retrievedBet, err := repo.GetByPollIdAndUserId(bet.PollId, bet.UserId)
+	if err != nil {
+		t.Fatalf("Failed to get updated bet: %v", err)
+	}
+	if retrievedBet.BetStatus != Won {
+		t.Errorf("Expected bet status %v, but got %v", Won, retrievedBet.BetStatus)
 	}
 }
