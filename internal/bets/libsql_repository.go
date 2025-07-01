@@ -115,6 +115,24 @@ func (repo libSQLRepository) GetBetsByPollId(pollID string) ([]Bet, error) {
 }
 
 func (repo libSQLRepository) UpdateBet(bet *Bet) error {
-	//TODO implement me
-	panic("implement me")
+	query := "UPDATE bets SET selected_option_index = ?, bet_status = ? WHERE poll_id = ? AND user_id = ?"
+	preparedStatement, preparedErr := repo.db.Prepare(query)
+	if preparedErr != nil {
+		return fmt.Errorf("error while preparing update bet statement: %w", preparedErr)
+	}
+
+	result, execErr := preparedStatement.Exec(bet.SelectedOptionIndex, bet.BetStatus, bet.PollId, bet.UserId)
+	if execErr != nil {
+		return fmt.Errorf("error while executing update bet statement: %w", execErr)
+	}
+
+	rowsAffected, rowErr := result.RowsAffected()
+	if rowErr != nil {
+		return fmt.Errorf("error while getting rows affected: %w", rowErr)
+	}
+	if rowsAffected == 0 {
+		return fmt.Errorf("no rows were affected by the update operation")
+	}
+
+	return nil
 }
