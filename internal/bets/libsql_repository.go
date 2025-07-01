@@ -87,8 +87,31 @@ func (repo libSQLRepository) GetBetsFromUser(userID string) ([]Bet, error) {
 }
 
 func (repo libSQLRepository) GetBetsByPollId(pollID string) ([]Bet, error) {
-	//TODO implement me
-	panic("implement me")
+	query := "SELECT poll_id, user_id, selected_option_index, bet_status FROM bets WHERE poll_id = ?"
+	preparedStatement, preparedErr := repo.db.Prepare(query)
+	if preparedErr != nil {
+		return nil, fmt.Errorf("error while preparing get bets by poll_id")
+	}
+
+	rows, queryErr := preparedStatement.Query(pollID)
+	if queryErr != nil {
+		return nil, fmt.Errorf("error while querying bets by poll_id")
+	}
+
+	var bets []Bet
+	for rows.Next() {
+		var bet Bet
+		if scanErr := rows.Scan(&bet.PollId, &bet.UserId, &bet.SelectedOptionIndex, &bet.BetStatus); scanErr != nil {
+			return nil, fmt.Errorf("error while scanning bet: %w", scanErr)
+		}
+
+		bets = append(bets, bet)
+
+		if err := rows.Err(); err != nil {
+			return nil, fmt.Errorf("error while iterating over rows: %w", err)
+		}
+	}
+	return bets, nil
 }
 
 func (repo libSQLRepository) UpdateBet(bet *Bet) error {
