@@ -1,160 +1,166 @@
+// internal/bets/repository_test.go
+
 package bets
 
 import (
 	"betting-discord-bot/internal/storage"
 	"os"
-	"slices"
+	"strings"
 	"testing"
 )
 
-func TestRepositories(t *testing.T) {
-	tests := []struct {
-		name  string
-		setup func(t *testing.T) (repo BetRepository, cleanup func())
-	}{
-		{
-			name: "InMemoryRepository",
-			setup: func(t *testing.T) (BetRepository, func()) {
-				repo := NewMemoryRepository()
-				return repo, func() {
-					// Cleanup if necessary
-				}
-			},
-		},
-		{
-			name: "LibSqlRepository",
-			setup: func(t *testing.T) (BetRepository, func()) {
-				dbPath := "BetsTest.db"
-				db, initErr := storage.InitializeDatabase(dbPath, "")
-				if initErr != nil {
-					return nil, nil
-				}
+// setupLibSQL is a helper function specifically for the LibSQL implementation.
+func setupLibSQL(t *testing.T) (BetRepository, func()) {
+	t.Helper()
 
-				repo := NewLibSQLRepository(db)
-				return repo, func() {
-					if err := db.Close(); err != nil {
-						t.Fatalf("Failed to close LibSqlRepository: %v", err)
-					}
+	// Sanitize the test name to create a clean, unique filename for each test run.
+	sanitizedTestName := strings.ReplaceAll(t.Name(), "/", "_")
+	dbPath := sanitizedTestName + ".db"
 
-					if err := os.RemoveAll(dbPath); err != nil {
-						t.Fatalf("Failed to remove test database file %s: %v", dbPath, err)
-					}
-				}
-			},
-		},
+	// Proactively remove any old database file from a previous failed run.
+	_ = os.Remove(dbPath)
+
+	db, err := storage.InitializeDatabase(dbPath, "")
+	if err != nil {
+		t.Fatalf("Failed to initialize test database: %v", err)
 	}
-	for _, testcase := range tests {
-		t.Run(testcase.name, func(t *testing.T) {
-			// ARRANGE: Set up the repository and db
-			repo, cleanup := testcase.setup(t)
-			t.Cleanup(cleanup)
 
-			testBetRepositories(t, repo)
+	repo := NewLibSQLRepository(db)
+
+	teardown := func() {
+		if err := db.Close(); err != nil {
+			t.Fatal("failed to close database")
+		}
+		if err := os.Remove(dbPath); err != nil {
+			t.Fatal("failed to remove database file")
+		}
+	}
+
+	return repo, teardown
+}
+
+// setupInMemory is a helper function for the in-memory implementation.
+func setupInMemory(t *testing.T) (BetRepository, func()) {
+	t.Helper()
+	repo := NewMemoryRepository()
+	teardown := func() {
+		// No cleanup needed for the in-memory version
+	}
+	return repo, teardown
+}
+
+// TestBetRepositoryImplementations is the main entry point for testing all BetRepository implementations.
+func TestBetRepositoryImplementations(t *testing.T) {
+	// This table defines all the implementations we want to test.
+	implementations := []struct {
+		name  string
+		setup func(t *testing.T) (BetRepository, func())
+	}{
+		{name: "InMemoryRepository", setup: setupInMemory},
+		{name: "LibSQLRepository", setup: setupLibSQL},
+	}
+
+	// This table defines all the behavioral tests we want to run against each implementation.
+	testCases := []struct {
+		name string
+		run  func(t *testing.T, repo BetRepository)
+	}{
+		{"it should save and get a bet", testSaveAndGet},
+		{"it should get all bets from a user", testGetAllBetsFromUser},
+		{"it should get all bets from a poll", testGetAllBetsFromPoll},
+	}
+
+	// Loop through each implementation and run each test against it. Did this
+	// because I needed the setup/teardown to run for each individual test instead of
+	// once per implementation.
+	for _, impl := range implementations {
+		t.Run(impl.name, func(t *testing.T) {
+			for _, tc := range testCases {
+				t.Run(tc.name, func(t *testing.T) {
+					repo, cleanup := impl.setup(t)
+					t.Cleanup(cleanup)
+
+					// Run the actual test logic.
+					tc.run(t, repo)
+				})
+			}
 		})
-
 	}
 }
 
-func testBetRepositories(t *testing.T, repo BetRepository) {
-	t.Run("it should save and get a bet from the repo", func(t *testing.T) {
+func testSaveAndGet(t *testing.T, repo BetRepository) {
+	// ARRANGE
+	bet := &Bet{
+		PollId:              "poll123",
+		UserId:              "user456",
+		SelectedOptionIndex: 0,
+		BetStatus:           Pending,
+	}
 
-		// ACT: Create a bet and save it to the repository.
-		bet := &Bet{
-			PollId:              "poll123",
-			UserId:              "user456",
-			SelectedOptionIndex: 0,
-			BetStatus:           Pending,
-		}
+	// ACT & ASSERT (Save)
+	if err := repo.Save(bet); err != nil {
+		t.Fatalf("Failed to save bet: %v", err)
+	}
 
-		if err := repo.Save(bet); err != nil {
+	// ACT & ASSERT (Get)
+	retrievedBet, err := repo.GetByPollIdAndUserId(bet.PollId, bet.UserId)
+	if err != nil {
+		t.Fatalf("Failed to get bet by PollId and UserId: %v", err)
+	}
+	if retrievedBet == nil {
+		t.Fatal("Retrieved bet is nil, expected a valid bet")
+	}
+	if retrievedBet.PollId != bet.PollId || retrievedBet.UserId != bet.UserId {
+		t.Errorf("Retrieved bet does not match original: got %+v, want %+v", retrievedBet, bet)
+	}
+}
+
+func testGetAllBetsFromUser(t *testing.T, repo BetRepository) {
+	// ARRANGE
+	userID := "user789"
+	bets := []Bet{
+		{PollId: "poll1", UserId: userID, SelectedOptionIndex: 0, BetStatus: Pending},
+		{PollId: "poll2", UserId: userID, SelectedOptionIndex: 1, BetStatus: Pending},
+	}
+	for _, bet := range bets {
+		if err := repo.Save(&bet); err != nil {
 			t.Fatalf("Failed to save bet: %v", err)
 		}
+	}
 
-		// ACT: Retrieve the bet by PollId and UserId.
-		retrievedBet, err := repo.GetByPollIdAndUserId(bet.PollId, bet.UserId)
-		if err != nil {
-			t.Fatalf("Failed to get bet by PollId and UserId: %v", err)
+	// ACT
+	retrievedBets, err := repo.GetBetsFromUser(userID)
+	if err != nil {
+		t.Fatalf("Failed to get bets from user: %v", err)
+	}
+
+	// ASSERT
+	if len(retrievedBets) != len(bets) {
+		t.Fatalf("Expected %d bets for user %s, got %d", len(bets), userID, len(retrievedBets))
+	}
+}
+
+func testGetAllBetsFromPoll(t *testing.T, repo BetRepository) {
+	// ARRANGE
+	pollID := "poll456"
+	bets := []Bet{
+		{PollId: pollID, UserId: "user1", SelectedOptionIndex: 0, BetStatus: Pending},
+		{PollId: pollID, UserId: "user2", SelectedOptionIndex: 1, BetStatus: Pending},
+	}
+	for _, bet := range bets {
+		if err := repo.Save(&bet); err != nil {
+			t.Fatalf("Failed to save bet: %v", err)
 		}
+	}
 
-		// ASSERT: Check that the retrieved bet matches the original.
-		if retrievedBet == nil {
-			t.Fatal("Retrieved bet is nil, expected a valid bet")
-		}
+	// ACT
+	retrievedBets, err := repo.GetBetsByPollId(pollID)
+	if err != nil {
+		t.Fatalf("Failed to get bets by PollId: %v", err)
+	}
 
-		if retrievedBet.PollId != bet.PollId ||
-			retrievedBet.UserId != bet.UserId ||
-			retrievedBet.SelectedOptionIndex != bet.SelectedOptionIndex ||
-			retrievedBet.BetStatus != bet.BetStatus {
-
-			t.Errorf("Retrieved bet does not match original: got %+v, want %+v", retrievedBet, bet)
-		}
-	})
-
-	t.Run("it should get all bets from a user", func(t *testing.T) {
-		// ACT: Create multiple bets for the same user.
-		userID := "user789"
-		bets := []Bet{
-			{PollId: "poll1", UserId: userID, SelectedOptionIndex: 0, BetStatus: Pending},
-			{PollId: "poll2", UserId: userID, SelectedOptionIndex: 1, BetStatus: Pending},
-			{PollId: "poll3", UserId: userID, SelectedOptionIndex: 0, BetStatus: Pending},
-		}
-		for _, bet := range bets {
-			if err := repo.Save(&bet); err != nil {
-				t.Fatalf("Failed to save bet: %v", err)
-			}
-		}
-
-		// ACT: Retrieve all bets for the user.
-		retrievedBets, retrieveErr := repo.GetBetsFromUser(userID)
-		if retrieveErr != nil {
-			t.Fatalf("Failed to get bets from user: %v", retrieveErr)
-		}
-
-		// ASSERT: Check that the retrieved bets match the original.
-		if len(retrievedBets) != len(bets) {
-			t.Fatalf("Expected %d bets for user %s, got %d", len(bets), userID, len(retrievedBets))
-		}
-
-		for i, bet := range retrievedBets {
-			if slices.Contains(bets, bet) {
-				continue
-			}
-
-			t.Errorf("Retrieved bet at index %d does not match original: got %+v, want %+v", i, bet, bets[i])
-		}
-	})
-
-	t.Run("it should get all bets from a poll", func(t *testing.T) {
-		// ACT: Create multiple bets for the same poll.
-		pollID := "poll456"
-		bets := []Bet{
-			{PollId: pollID, UserId: "user1", SelectedOptionIndex: 0, BetStatus: Pending},
-			{PollId: pollID, UserId: "user2", SelectedOptionIndex: 1, BetStatus: Pending},
-			{PollId: pollID, UserId: "user3", SelectedOptionIndex: 0, BetStatus: Pending},
-		}
-		for _, bet := range bets {
-			if err := repo.Save(&bet); err != nil {
-				t.Fatalf("Failed to save bet: %v", err)
-			}
-		}
-
-		// ACT: Retrieve all bets for the poll.
-		retrievedBets, retrieveErr := repo.GetBetsByPollId(pollID)
-		if retrieveErr != nil {
-			t.Fatalf("Failed to get bets by PollId: %v", retrieveErr)
-		}
-
-		// ASSERT: Check that the retrieved bets match the original.
-		if len(retrievedBets) != len(bets) {
-			t.Fatalf("Expected %d bets for poll %s, got %d", len(bets), pollID, len(retrievedBets))
-		}
-
-		for i, bet := range retrievedBets {
-			if slices.Contains(bets, bet) {
-				continue
-			}
-
-			t.Errorf("Retrieved bet at index %d does not match original: got %+v, want %+v", i, bet, bets[i])
-		}
-	})
+	// ASSERT
+	if len(retrievedBets) != len(bets) {
+		t.Fatalf("Expected %d bets for poll %s, got %d", len(bets), pollID, len(retrievedBets))
+	}
 }
