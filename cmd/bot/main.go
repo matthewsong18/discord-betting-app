@@ -1,19 +1,22 @@
 package main
 
 import (
+	"betting-discord-bot/internal/bets"
+	"betting-discord-bot/internal/polls"
 	"betting-discord-bot/internal/storage"
+	"betting-discord-bot/internal/users"
+	"database/sql"
 	"fmt"
+	"github.com/bwmarrin/discordgo"
 	"log"
 	"os"
 	"os/signal"
-
-	"github.com/bwmarrin/discordgo"
 )
 
 // Bot parameters
 var (
 	GuildID       = os.Getenv("GUILD_ID")
-	BotToken      = os.Getenv("BOT_TOKEN")
+	Token         = os.Getenv("TOKEN")
 	AppID         = os.Getenv("APP_ID")
 	DbPath        = os.Getenv("DB_PATH")
 	EncryptionKey = os.Getenv("ENCRYPTION_KEY")
@@ -23,20 +26,92 @@ var discordSession *discordgo.Session
 
 func init() {
 	var err error
-	discordSession, err = discordgo.New("Bot " + BotToken)
+	discordSession, err = discordgo.New("Bot " + Token)
 	if err != nil {
 		log.Fatalf("Invalid bot parameters: %v", err)
 	}
 }
 
 func run() (err error) {
+	// Validate ENV
+	if err := validateEnvVariables(); err != nil {
+		return fmt.Errorf("failed to validate env variables: %w", err)
+	}
+
+	// Setup DB
+	db, initDbError := storage.InitializeDatabase(DbPath, EncryptionKey)
+
+	if initDbError != nil {
+		return fmt.Errorf("failed to initialize database: %w", initDbError)
+	}
+
+	log.Println("Database initialized successfully")
+
+	// Init services
+	pollService, betService, userService := initServices(db)
+
+	// Setup discord bot
+	if err := setupDiscordBot(pollService, betService, userService); err != nil {
+		return fmt.Errorf("failed to setup discord bot: %w", err)
+	}
+
+	// Bot shutdown handlers
+	stop := make(chan os.Signal, 1)
+	signal.Notify(stop, os.Interrupt)
+	<-stop
+	log.Println("Graceful shutdown")
+
+	defer func(discordSession *discordgo.Session) {
+		_ = discordSession.Close()
+	}(discordSession)
+
+	defer func() {
+		if closeError := db.Close(); closeError != nil {
+			fmt.Println("Error closing database", closeError)
+			if err == nil {
+				err = closeError
+			}
+		}
+	}()
+
+	return nil
+}
+
+func setupDiscordBot(pollService polls.PollService, betService bets.BetService, userService users.UserService) error {
+	bot := NewBot(discordSession, pollService, betService, userService)
+
+	if err := bot.RegisterCommands(); err != nil {
+		return fmt.Errorf("failed to register commands: %w", err)
+	}
+
+	discordSession.AddHandler(func(discordSession *discordgo.Session, ready *discordgo.Ready) {
+		log.Println("Bot is up")
+	})
+
+	if err := discordSession.Open(); err != nil {
+		log.Fatalf("Cannot open the session: %v", err)
+	}
+	return nil
+}
+
+func initServices(db *sql.DB) (polls.PollService, bets.BetService, users.UserService) {
+	pollRepo := polls.NewLibSQLRepository(db)
+	pollService := polls.NewService(pollRepo)
+	betRepo := bets.NewLibSQLRepository(db)
+	betService := bets.NewService(pollService, betRepo)
+	userRepo := users.NewLibSQLRepository(db)
+	userService := users.NewService(userRepo, betService)
+	return pollService, betService, userService
+}
+
+func validateEnvVariables() error {
 	flagErr := false
 	if GuildID == "" {
 		log.Println("GUILD_ID environment variable is not set")
 		flagErr = true
 	}
-	if BotToken == "" {
-		log.Println("BOT_TOKEN environment variable is not set")
+	if Token == "" {
+		log.Println("TOKEN environment variable is not set")
 		flagErr = true
 	}
 	if AppID == "" {
@@ -55,44 +130,6 @@ func run() (err error) {
 	if EncryptionKey == "" {
 		log.Println("ENCRYPTION_KEY environment variable is not set, using unencrypted database")
 	}
-
-	db, initDbError := storage.InitializeDatabase(DbPath, EncryptionKey)
-
-	if initDbError != nil {
-		return fmt.Errorf("failed to initialize database: %w", initDbError)
-	}
-
-	log.Println("Database initialized successfully")
-
-	// Initialize internal services here
-
-	// Run discord logic here
-	discordSession.AddHandler(func(discordSession *discordgo.Session, ready *discordgo.Ready) {
-		log.Println("Bot is up")
-	})
-
-	err = discordSession.Open()
-	if err != nil {
-		log.Fatalf("Cannot open the session: %v", err)
-	}
-	defer func(discordSession *discordgo.Session) {
-		_ = discordSession.Close()
-	}(discordSession)
-
-	stop := make(chan os.Signal, 1)
-	signal.Notify(stop, os.Interrupt)
-	<-stop
-	log.Println("Graceful shutdown")
-
-	defer func() {
-		if closeError := db.Close(); closeError != nil {
-			fmt.Println("Error closing database", closeError)
-			if err == nil {
-				err = closeError
-			}
-		}
-	}()
-
 	return nil
 }
 
