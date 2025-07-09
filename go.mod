@@ -9,10 +9,10 @@ require (
 )
 
 require (
-	github.com/antlr4-go/antlr/v4 v4.13.0 // indirect
-	github.com/gorilla/websocket v1.4.2 // indirect
-	github.com/libsql/sqlite-antlr4-parser v0.0.0-20240327125255-dbf53b6cbf06 // indirect
-	golang.org/x/crypto v0.0.0-20210421170649-83a5a9bb288b // indirect
-	golang.org/x/exp v0.0.0-20230515195305-f3d0a9c9a5cc // indirect
-	golang.org/x/sys v0.1.0 // indirect
+	github.com/antlr4-go/antlr/v4 v4.13.1 // indirect
+	github.com/gorilla/websocket v1.5.3 // indirect
+	github.com/libsql/sqlite-antlr4-parser v0.0.0-20240721121621-c0bdc870f11c // indirect
+	golang.org/x/crypto v0.39.0 // indirect
+	golang.org/x/exp v0.0.0-20250620022241-b7579e27df2b // indirect
+	golang.org/x/sys v0.34.0 // indirect
 )

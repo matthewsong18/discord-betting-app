@@ -80,6 +80,8 @@ func run() (err error) {
 func setupDiscordBot(pollService polls.PollService, betService bets.BetService, userService users.UserService) error {
 	bot := NewBot(discordSession, pollService, betService, userService)
 
+	bot.DiscordSession.AddHandler(bot.interactionHandler)
+
 	if err := bot.RegisterCommands(); err != nil {
 		return fmt.Errorf("failed to register commands: %w", err)
 	}
