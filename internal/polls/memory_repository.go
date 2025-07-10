@@ -45,4 +45,15 @@ func (m memoryRepository) Delete(pollID string) error {
 	return nil
 }
 
+func (m memoryRepository) GetOpenPolls() ([]*Poll, error) {
+	var openPolls []*Poll
+	for _, poll := range m.polls {
+		if poll.Status == Open {
+			openPolls = append(openPolls, poll)
+		}
+	}
+
+	return openPolls, nil
+}
+
 var _ PollRepository = (*memoryRepository)(nil)

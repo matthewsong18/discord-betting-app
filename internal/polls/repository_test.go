@@ -63,6 +63,7 @@ func TestPollRepositoryImplementations(t *testing.T) {
 		{"it should save and retrieve the poll", testSaveAndReceive},
 		{"it should update the poll", testUpdate},
 		{"it should delete the poll", testDelete},
+		{"it should return all open polls", testGetAllOpenInRepo},
 	}
 
 	for _, impl := range implementations {
@@ -188,5 +189,62 @@ func testDelete(t *testing.T, repo PollRepository) {
 	_, err = repo.GetById(pollToDelete.ID)
 	if err == nil {
 		t.Fatal("Expected error when retrieving deleted poll, but got nil")
+	}
+}
+
+func testGetAllOpenInRepo(t *testing.T, repo PollRepository) {
+	// ARRANGE: Create open and closed polls
+	if err := repo.Save(&Poll{
+		ID:    uuid.NewString(),
+		Title: "open poll 1",
+		Options: []string{
+			"Option 1",
+			"Option 2",
+		},
+		Status:  Open,
+		Outcome: 0,
+	}); err != nil {
+		t.Fatalf("Save() returned an unexpected error: %v", err)
+	}
+	if err := repo.Save(&Poll{
+		ID:    uuid.NewString(),
+		Title: "open poll 2",
+		Options: []string{
+			"Option 1",
+			"Option 2",
+		},
+		Status:  Open,
+		Outcome: 0,
+	}); err != nil {
+		t.Fatalf("Save() returned an unexpected error: %v", err)
+	}
+	if err := repo.Save(&Poll{
+		ID:    uuid.NewString(),
+		Title: "closed poll 1",
+		Options: []string{
+			"Option 1",
+			"Option 2",
+		},
+		Status:  Closed,
+		Outcome: 0,
+	}); err != nil {
+		t.Fatalf("Save() returned an unexpected error: %v", err)
+	}
+
+	// ACT: Get Open Polls
+	openPolls, err := repo.GetOpenPolls()
+	if err != nil {
+		t.Fatalf("GetOpenPolls() returned an unexpected error: %v", err)
+	}
+
+	// ASSERT
+	if len(openPolls) != 2 {
+		t.Errorf("Expected 2 open polls, but got %d", len(openPolls))
+	}
+
+	for _, poll := range openPolls {
+		if poll.Status != Open {
+			t.Errorf("Expected poll status %v, but got %v", Open, poll.Status)
+		}
 	}
 }

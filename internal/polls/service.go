@@ -86,4 +86,13 @@ func (s *service) GetPollById(id string) (*Poll, error) {
 	return poll, nil
 }
 
+func (s *service) GetOpenPolls() ([]*Poll, error) {
+	openPolls, err := s.pollRepo.GetOpenPolls()
+	if err != nil {
+		return nil, fmt.Errorf("failed to get open polls: %w", err)
+	}
+
+	return openPolls, nil
+}
+
 var _ PollService = (*service)(nil)

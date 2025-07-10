@@ -193,6 +193,7 @@ func deletePoll(pollID string, repo *libSQLRepository) error {
 	}
 	return nil
 }
+
 func deletePollOptions(pollID string, repo *libSQLRepository) error {
 	query := "DELETE FROM poll_options WHERE poll_id = ?"
 	preparedStatement, prepareError := repo.db.Prepare(query)
@@ -210,4 +211,40 @@ func deletePollOptions(pollID string, repo *libSQLRepository) error {
 		return fmt.Errorf("no rows were affected by the delete operation for options of poll ID %s", pollID)
 	}
 	return nil
+}
+
+func (repo *libSQLRepository) GetOpenPolls() ([]*Poll, error) {
+	// Getting IDs instead of polls because poll query is complicated and already exists in GetPollByID
+	query := "SELECT id FROM polls WHERE status = ?"
+	preparedStatement, preparedErr := repo.db.Prepare(query)
+	if preparedErr != nil {
+		return nil, fmt.Errorf("error while preparing statement: %w", preparedErr)
+	}
+
+	rows, rowErr := preparedStatement.Query(Open)
+	if rowErr != nil {
+		return nil, fmt.Errorf("error while executing query: %w", rowErr)
+	}
+
+	// Get IDs of Polls
+	var openPollIDs []string
+	for rows.Next() {
+		var id string
+		if scanErr := rows.Scan(&id); scanErr != nil {
+			return nil, fmt.Errorf("error while scanning row: %w", scanErr)
+		}
+		openPollIDs = append(openPollIDs, id)
+	}
+
+	// Request Polls with those IDs
+	var openPolls []*Poll
+	for _, id := range openPollIDs {
+		poll, err := repo.GetById(id)
+		if err != nil {
+			return nil, fmt.Errorf("error while getting poll by ID: %w", err)
+		}
+		openPolls = append(openPolls, poll)
+	}
+
+	return openPolls, nil
 }
