@@ -12,7 +12,7 @@ func NewMemoryRepository() UserRepository {
 	}
 }
 
-func (repo memoryRepository) Save(user *User) error {
+func (repo *memoryRepository) Save(user *User) error {
 	if user == nil {
 		return errors.New("user is nil")
 	}
@@ -21,7 +21,7 @@ func (repo memoryRepository) Save(user *User) error {
 	return nil
 }
 
-func (repo memoryRepository) GetByID(id string) (*User, error) {
+func (repo *memoryRepository) GetByID(id string) (*User, error) {
 	user, exists := repo.users[id]
 	if !exists {
 		return nil, errors.New("user not found")
@@ -29,7 +29,7 @@ func (repo memoryRepository) GetByID(id string) (*User, error) {
 	return user, nil
 }
 
-func (repo memoryRepository) GetByDiscordID(discordID string) (*User, error) {
+func (repo *memoryRepository) GetByDiscordID(discordID string) (*User, error) {
 	for i, user := range repo.users {
 		if user.DiscordID == discordID {
 			return repo.users[i], nil
@@ -38,7 +38,7 @@ func (repo memoryRepository) GetByDiscordID(discordID string) (*User, error) {
 	return nil, errors.New("user not found")
 }
 
-func (repo memoryRepository) Delete(discordID string) error {
+func (repo *memoryRepository) Delete(discordID string) error {
 	for id, user := range repo.users {
 		if user.DiscordID == discordID {
 			delete(repo.users, id)
