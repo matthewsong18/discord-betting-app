@@ -32,7 +32,7 @@ func (repo *libsqlRepository) GetByID(id string) (*User, error) {
 	err := row.Scan(&user.ID, &user.DiscordID)
 	if err != nil {
 		if errors.Is(err, sql.ErrNoRows) {
-			return nil, fmt.Errorf("user with id %s not found", id)
+			return nil, ErrUserNotFound
 		}
 		return nil, fmt.Errorf("error retrieving user: %w", err)
 	}
@@ -47,7 +47,7 @@ func (repo *libsqlRepository) GetByDiscordID(discordID string) (*User, error) {
 	err := row.Scan(&user.ID, &user.DiscordID)
 	if err != nil {
 		if errors.Is(err, sql.ErrNoRows) {
-			return nil, fmt.Errorf("user with discord_id %s not found", discordID)
+			return nil, ErrUserNotFound
 		}
 		return nil, fmt.Errorf("error retrieving user: %w", err)
 	}
@@ -67,7 +67,7 @@ func (repo *libsqlRepository) Delete(discordID string) error {
 	}
 
 	if rowsAffected == 0 {
-		return fmt.Errorf("no user found with discord_id %s", discordID)
+		return ErrUserNotFound
 	}
 
 	return nil
