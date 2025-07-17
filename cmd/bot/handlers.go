@@ -1,9 +1,14 @@
 package main
 
 import (
+	"bytes"
+	"encoding/json"
 	"fmt"
 	"github.com/bwmarrin/discordgo"
+	"io"
 	"log"
+	"net/http"
+	"os"
 )
 
 func (bot *Bot) interactionHandler(s *discordgo.Session, i *discordgo.InteractionCreate) {
@@ -138,4 +143,79 @@ func (bot *Bot) handlePollModalSubmit(s *discordgo.Session, i *discordgo.Interac
 	}); err != nil {
 		log.Printf("Error sending modal confirmation: %v", err)
 	}
+
+	pollTitle := TextDisplay{
+		Type:    10,
+		Content: fmt.Sprintf("# %s\n", title),
+	}
+
+	button1 := Button{
+		Type:     2,
+		Style:    2,
+		Label:    fmt.Sprintf("Bet on %s", option1),
+		CustomID: "option_1",
+	}
+
+	button2 := Button{
+		Type:     2,
+		Style:    2,
+		Label:    fmt.Sprintf("Bet on %s", option2),
+		CustomID: "option_2",
+	}
+
+	buttons := ActionRow{
+		Type: 1,
+		Components: []interface{}{
+			button1,
+			button2,
+		},
+	}
+
+	message := MessageSend{
+		Flags: IsComponentsV2,
+		Components: []interface{}{
+			pollTitle,
+			buttons,
+		},
+	}
+
+	jsonMessage, jsonErr := json.Marshal(message)
+	if jsonErr != nil {
+		log.Printf("Error marshaling message: %v", jsonErr)
+		return
+	}
+
+	channelID := i.ChannelID
+	url := fmt.Sprintf("https://discord.com/api/v10/channels/%s/messages", channelID)
+	request, requestErr := http.NewRequest("POST", url, bytes.NewBuffer(jsonMessage))
+	if requestErr != nil {
+		//return fmt.Errorf("error creating request: %w", requestErr)
+	}
+
+	request.Header.Set("Content-Type", "application/json")
+	botToken := os.Getenv("TOKEN")
+	request.Header.Set("Authorization", fmt.Sprintf("Bot %s", botToken))
+
+	log.Println("Sending manual HTTP request to Discord API...")
+
+	resp, err := http.DefaultClient.Do(request)
+	if err != nil {
+		log.Printf("error sending HTTP request to Discord: %v", err)
+	}
+
+	defer func(Body io.ReadCloser) {
+		err := Body.Close()
+		if err != nil {
+			log.Printf("Error closing response body: %v", err)
+		}
+	}(resp.Body)
+
+	if resp.StatusCode < 200 || resp.StatusCode > 299 {
+		// If it's not a success, we read the error message Discord sent back.
+		bodyBytes, _ := io.ReadAll(resp.Body)
+		log.Printf("discord API returned a non-success status code %d: %s", resp.StatusCode, string(bodyBytes))
+		return
+	}
+
+	log.Println("Successfully sent message with custom components.")
 }
