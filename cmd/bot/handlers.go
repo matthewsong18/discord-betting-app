@@ -40,52 +40,64 @@ func (bot *Bot) handleModalSubmit(s *discordgo.Session, i *discordgo.Interaction
 
 // handleCreatePollCommand responds to the `/create-poll` command by showing a modal.
 func (bot *Bot) handleCreatePollCommand(s *discordgo.Session, i *discordgo.InteractionCreate) {
-	err := s.InteractionRespond(i.Interaction, &discordgo.InteractionResponse{
-		Type: discordgo.InteractionResponseModal,
-		Data: &discordgo.InteractionResponseData{
-			CustomID: "poll_modal", // The ID we'll check for on submission
-			Title:    "Create a New Poll",
-			Components: []discordgo.MessageComponent{
-				discordgo.ActionsRow{
-					Components: []discordgo.MessageComponent{
-						discordgo.TextInput{
-							CustomID:    "title",
-							Label:       "Poll Title",
-							Style:       discordgo.TextInputShort,
-							Placeholder: "Who will win the grand finals?",
-							Required:    true,
-							MaxLength:   300,
-						},
-					},
-				},
-				discordgo.ActionsRow{
-					Components: []discordgo.MessageComponent{
-						discordgo.TextInput{
-							CustomID:  "option1",
-							Label:     "First Option",
-							Style:     discordgo.TextInputShort,
-							Required:  true,
-							MaxLength: 100,
-						},
-					},
-				},
-				discordgo.ActionsRow{
-					Components: []discordgo.MessageComponent{
-						discordgo.TextInput{
-							CustomID:  "option2",
-							Label:     "Second Option",
-							Style:     discordgo.TextInputShort,
-							Required:  true,
-							MaxLength: 100,
-						},
-					},
-				},
+	modalData := &discordgo.InteractionResponseData{
+		CustomID:   "poll_modal", // The ID we'll check for on submission
+		Title:      "Create a New Poll",
+		Components: pollModalComponents(),
+	}
+
+	if err := s.InteractionRespond(
+		i.Interaction,
+		&discordgo.InteractionResponse{
+			Type: discordgo.InteractionResponseModal,
+			Data: modalData,
+		},
+	); err != nil {
+		log.Printf("Error showing modal: %v", err)
+	}
+}
+
+func pollModalComponents() []discordgo.MessageComponent {
+	return []discordgo.MessageComponent{
+		newTextInputRow(
+			"title",
+			"Poll Title",
+			"Who will win the grand finals?",
+			discordgo.TextInputShort,
+			300,
+			true,
+		),
+		newTextInputRow(
+			"option1",
+			"First Option",
+			"",
+			discordgo.TextInputShort,
+			100,
+			true,
+		),
+		newTextInputRow(
+			"option2",
+			"Second Option",
+			"",
+			discordgo.TextInputShort,
+			100,
+			true,
+		),
+	}
+}
+
+func newTextInputRow(customID, label, placeholder string, style discordgo.TextInputStyle, maxLength int, required bool) discordgo.ActionsRow {
+	return discordgo.ActionsRow{
+		Components: []discordgo.MessageComponent{
+			&discordgo.TextInput{
+				CustomID:    customID,
+				Label:       label,
+				Placeholder: placeholder,
+				Style:       style,
+				Required:    required,
+				MaxLength:   maxLength,
 			},
 		},
-	})
-
-	if err != nil {
-		log.Printf("Error showing modal: %v", err)
 	}
 }
 
