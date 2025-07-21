@@ -32,6 +32,24 @@ func (service service) CreateUser(discordID string) (*User, error) {
 	return user, nil
 }
 
+func (service service) GetUserByDiscordID(discordID string) (*User, error) {
+	user, userErr := service.userRepo.GetByDiscordID(discordID)
+	if userErr != nil {
+		return nil, userErr
+	}
+
+	return user, nil
+}
+
+func (service service) DeleteUser(discordID string) error {
+	err := service.userRepo.Delete(discordID)
+	if err != nil {
+		return fmt.Errorf("could not delete user: %w", err)
+	}
+
+	return nil
+}
+
 func (service service) GetWinLoss(userID string) (*WinLoss, error) {
 	winLoss := &WinLoss{
 		Wins:   0,

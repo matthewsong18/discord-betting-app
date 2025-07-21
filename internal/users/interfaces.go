@@ -4,6 +4,8 @@ import "errors"
 
 type UserService interface {
 	CreateUser(discordID string) (*User, error)
+	GetUserByDiscordID(discordID string) (*User, error)
+	DeleteUser(discordID string) error
 	GetWinLoss(userID string) (*WinLoss, error)
 }
 
