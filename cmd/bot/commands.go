@@ -12,10 +12,6 @@ func (bot *Bot) RegisterCommands() error {
 			Name:        "create-poll",
 			Description: "Create a new poll",
 		},
-		{
-			Name:        "bet",
-			Description: "Place a bet on an open poll",
-		},
 	}
 
 	AppID = os.Getenv("APP_ID")

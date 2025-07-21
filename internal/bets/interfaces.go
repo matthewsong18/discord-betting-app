@@ -21,3 +21,4 @@ type BetRepository interface {
 
 var ErrBetNotFound = errors.New("bet not found")
 var ErrUserAlreadyBet = errors.New("user already bet")
+var ErrPollIsClosed = errors.New("poll is closed")

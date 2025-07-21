@@ -29,7 +29,7 @@ func (betService *service) CreateBet(pollID string, userID string, selectedOptio
 	}
 
 	if poll.Status == polls.Closed {
-		return nil, errors.New("cannot bet on a closed poll")
+		return nil, ErrPollIsClosed
 	}
 
 	if err := checkIfUserAlreadyBetOnPoll(pollID, userID, betService); err != nil {

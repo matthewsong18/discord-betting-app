@@ -1,8 +1,12 @@
 package main
 
 import (
+	"betting-discord-bot/internal/users"
+	"errors"
 	"github.com/bwmarrin/discordgo"
 	"log"
+	"strconv"
+	"strings"
 )
 
 func (bot *Bot) interactionHandler(s *discordgo.Session, i *discordgo.InteractionCreate) {
@@ -24,8 +28,6 @@ func (bot *Bot) handleSlashCommand(s *discordgo.Session, i *discordgo.Interactio
 	switch commandName {
 	case "create-poll":
 		bot.handleCreatePollCommand(s, i)
-	case "bet":
-		// bot.handleBetCommand(s, i) // Future implementation
 	default:
 		log.Printf("Unknown slash command received: %s", commandName)
 	}
@@ -39,4 +41,45 @@ func (bot *Bot) handleModalSubmit(s *discordgo.Session, i *discordgo.Interaction
 	default:
 		log.Printf("Unknown modal submission received: %s", customID)
 	}
+}
+
+func (bot *Bot) handleButtonPress(s *discordgo.Session, i *discordgo.InteractionCreate) {
+	customID := i.MessageComponentData().CustomID
+	betData := strings.Split(customID, ":")
+
+	if len(betData) != 3 {
+		log.Printf("Invalid custom ID received: %s", customID)
+		return
+	}
+
+	pollID := betData[1]
+	optionIndex, err := strconv.Atoi(betData[2])
+	if err != nil {
+		log.Printf("failed to convert option index to int: %s", betData[2])
+		return
+	}
+
+	userDiscordID := i.Member.User.ID
+
+	user, getUserErr := bot.UserService.GetUserByDiscordID(userDiscordID)
+	if getUserErr != nil {
+		if errors.Is(getUserErr, users.ErrUserNotFound) {
+			var createUserErr error
+			user, createUserErr = bot.UserService.CreateUser(userDiscordID)
+			if createUserErr != nil {
+				log.Printf("Error creating user: %v", createUserErr)
+				return
+			}
+		} else {
+			log.Printf("Error getting user: %v", getUserErr)
+			return
+		}
+	}
+
+	if optionIndex != 2 {
+		handleBet(s, i, bot, pollID, user, optionIndex)
+		return
+	}
+
+	handleEndPoll(s, i, bot, pollID)
 }

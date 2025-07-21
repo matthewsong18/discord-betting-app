@@ -122,25 +122,33 @@ func sendPollMessage(title string, option1 string, option2 string, poll *polls.P
 		Content: fmt.Sprintf("# %s\n-# Warning: You cannot change your bet after submission.", title),
 	}
 
-	button1 := Button{
+	option1Button := Button{
 		Type:     2,
 		Style:    2,
 		Label:    fmt.Sprintf("Bet on %s", option1),
 		CustomID: fmt.Sprintf("bet:%s:0", poll.ID),
 	}
 
-	button2 := Button{
+	option2Button := Button{
 		Type:     2,
 		Style:    2,
 		Label:    fmt.Sprintf("Bet on %s", option2),
 		CustomID: fmt.Sprintf("bet:%s:1", poll.ID),
 	}
 
+	endPollButton := Button{
+		Type:     2,
+		Style:    4,
+		Label:    "End Poll",
+		CustomID: fmt.Sprintf("bet:%s:2", poll.ID),
+	}
+
 	buttons := ActionRow{
 		Type: 1,
 		Components: []interface{}{
-			button1,
-			button2,
+			option1Button,
+			option2Button,
+			endPollButton,
 		},
 	}
 
@@ -192,4 +200,33 @@ func sendPollMessage(title string, option1 string, option2 string, poll *polls.P
 	}
 
 	log.Println("Successfully sent message with custom components.")
+}
+
+func handleEndPoll(s *discordgo.Session, i *discordgo.InteractionCreate, bot *Bot, pollID string) {
+	if (i.Member.Permissions & discordgo.PermissionManageMessages) != discordgo.PermissionManageMessages {
+		log.Printf("User \"%s\" does not have permission to end polls", i.Member.User.GlobalName)
+		if err := s.InteractionRespond(i.Interaction, &discordgo.InteractionResponse{
+			Type: discordgo.InteractionResponseChannelMessageWithSource,
+			Data: &discordgo.InteractionResponseData{
+				Flags:   discordgo.MessageFlagsEphemeral,
+				Content: "You do not have permission to end polls",
+			},
+		}); err != nil {
+			log.Printf("Error sending \"user does not have permission\" error: %v", err)
+		}
+		return
+	}
+
+	if err := bot.PollService.ClosePoll(pollID); err != nil {
+		log.Printf("Error closing poll: %v", err)
+		return
+	}
+
+	if err := s.InteractionRespond(i.Interaction, &discordgo.InteractionResponse{
+		Type: discordgo.InteractionResponseDeferredMessageUpdate,
+	}); err != nil {
+		log.Printf("Error sending response to end poll: %v", err)
+	}
+
+	log.Printf("User %s ended poll %s", i.Member.User.GlobalName, pollID)
 }
