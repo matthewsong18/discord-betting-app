@@ -144,6 +144,10 @@ func (bot *Bot) handlePollModalSubmit(s *discordgo.Session, i *discordgo.Interac
 		log.Printf("Error sending modal confirmation: %v", err)
 	}
 
+	sendPollMessage(title, option1, option2, i)
+}
+
+func sendPollMessage(title string, option1 string, option2 string, i *discordgo.InteractionCreate) {
 	pollTitle := TextDisplay{
 		Type:    10,
 		Content: fmt.Sprintf("# %s\n", title),
