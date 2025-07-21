@@ -225,7 +225,7 @@ func (bot *Bot) handlePollModalSubmit(s *discordgo.Session, i *discordgo.Interac
 func sendPollMessage(title string, option1 string, option2 string, poll *polls.Poll, i *discordgo.InteractionCreate) {
 	pollTitle := TextDisplay{
 		Type:    10,
-		Content: fmt.Sprintf("# %s\n", title),
+		Content: fmt.Sprintf("# %s\n-# Warning: You cannot change your bet after submission.", title),
 	}
 
 	button1 := Button{
