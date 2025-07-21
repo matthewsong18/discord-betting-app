@@ -1,14 +1,20 @@
 package main
 
 import (
+	"betting-discord-bot/internal/bets"
+	"betting-discord-bot/internal/polls"
+	"betting-discord-bot/internal/users"
 	"bytes"
 	"encoding/json"
+	"errors"
 	"fmt"
 	"github.com/bwmarrin/discordgo"
 	"io"
 	"log"
 	"net/http"
 	"os"
+	"strconv"
+	"strings"
 )
 
 func (bot *Bot) interactionHandler(s *discordgo.Session, i *discordgo.InteractionCreate) {
@@ -18,6 +24,10 @@ func (bot *Bot) interactionHandler(s *discordgo.Session, i *discordgo.Interactio
 	case discordgo.InteractionModalSubmit:
 		// This is a modal submission
 		bot.handleModalSubmit(s, i)
+	case discordgo.InteractionMessageComponent:
+		bot.handleButtonPress(s, i)
+	default:
+		log.Printf("Unknown interaction type received: %v", i.Type)
 	}
 }
 
@@ -41,6 +51,71 @@ func (bot *Bot) handleModalSubmit(s *discordgo.Session, i *discordgo.Interaction
 	default:
 		log.Printf("Unknown modal submission received: %s", customID)
 	}
+}
+
+func (bot *Bot) handleButtonPress(s *discordgo.Session, i *discordgo.InteractionCreate) {
+	customID := i.MessageComponentData().CustomID
+	betData := strings.Split(customID, ":")
+
+	if len(betData) != 3 {
+		log.Printf("Invalid custom ID received: %s", customID)
+		return
+	}
+
+	pollID := betData[1]
+	optionIndex, err := strconv.Atoi(betData[2])
+	if err != nil {
+		log.Printf("failed to convert option index to int: %s", betData[2])
+		return
+	}
+
+	userDiscordID := i.Member.User.ID
+
+	user, getUserErr := bot.UserService.GetUserByDiscordID(userDiscordID)
+	if getUserErr != nil {
+		if errors.Is(getUserErr, users.ErrUserNotFound) {
+			var createUserErr error
+			user, createUserErr = bot.UserService.CreateUser(userDiscordID)
+			if createUserErr != nil {
+				log.Printf("Error creating user: %v", createUserErr)
+				return
+			}
+		} else {
+			log.Printf("Error getting user: %v", getUserErr)
+			return
+		}
+	}
+
+	bet, betErr := bot.BetService.CreateBet(pollID, user.ID, optionIndex)
+	if betErr != nil {
+		if errors.Is(betErr, bets.ErrUserAlreadyBet) {
+			if err := s.InteractionRespond(i.Interaction, &discordgo.InteractionResponse{
+				Type: discordgo.InteractionResponseChannelMessageWithSource,
+				Data: &discordgo.InteractionResponseData{
+					Content: fmt.Sprint("You have already bet on this poll"),
+					Flags:   discordgo.MessageFlagsEphemeral,
+				},
+			}); err != nil {
+				log.Printf("Error sending bet confirmation: %v", err)
+			}
+		}
+
+		log.Printf("Error creating bet: %v", betErr)
+		return
+	}
+
+	log.Printf("Bet created: %v", bet)
+
+	if err := s.InteractionRespond(i.Interaction, &discordgo.InteractionResponse{
+		Type: discordgo.InteractionResponseChannelMessageWithSource,
+		Data: &discordgo.InteractionResponseData{
+			Content: fmt.Sprint("Bet submitted"),
+			Flags:   discordgo.MessageFlagsEphemeral,
+		},
+	}); err != nil {
+		log.Printf("Error sending bet confirmation: %v", err)
+	}
+
 }
 
 // handleCreatePollCommand responds to the `/create-poll` command by showing a modal.
@@ -126,7 +201,7 @@ func (bot *Bot) handlePollModalSubmit(s *discordgo.Session, i *discordgo.Interac
 
 	log.Printf("Poll submitted: Title='%s', Option1='%s', Option2='%s'", title, option1, option2)
 
-	_, err := bot.PollService.CreatePoll(title, []string{option1, option2})
+	poll, err := bot.PollService.CreatePoll(title, []string{option1, option2})
 	if err != nil {
 		log.Printf("Error creating poll: %v", err)
 		return
@@ -144,10 +219,10 @@ func (bot *Bot) handlePollModalSubmit(s *discordgo.Session, i *discordgo.Interac
 		log.Printf("Error sending modal confirmation: %v", err)
 	}
 
-	sendPollMessage(title, option1, option2, i)
+	sendPollMessage(title, option1, option2, poll, i)
 }
 
-func sendPollMessage(title string, option1 string, option2 string, i *discordgo.InteractionCreate) {
+func sendPollMessage(title string, option1 string, option2 string, poll *polls.Poll, i *discordgo.InteractionCreate) {
 	pollTitle := TextDisplay{
 		Type:    10,
 		Content: fmt.Sprintf("# %s\n", title),
@@ -157,14 +232,14 @@ func sendPollMessage(title string, option1 string, option2 string, i *discordgo.
 		Type:     2,
 		Style:    2,
 		Label:    fmt.Sprintf("Bet on %s", option1),
-		CustomID: "option_1",
+		CustomID: fmt.Sprintf("bet:%s:0", poll.ID),
 	}
 
 	button2 := Button{
 		Type:     2,
 		Style:    2,
 		Label:    fmt.Sprintf("Bet on %s", option2),
-		CustomID: "option_2",
+		CustomID: fmt.Sprintf("bet:%s:1", poll.ID),
 	}
 
 	buttons := ActionRow{

@@ -20,3 +20,4 @@ type BetRepository interface {
 // Errors related to bets
 
 var ErrBetNotFound = errors.New("bet not found")
+var ErrUserAlreadyBet = errors.New("user already bet")

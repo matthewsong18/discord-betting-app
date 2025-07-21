@@ -56,7 +56,7 @@ func checkIfUserAlreadyBetOnPoll(pollId string, userId string, s *service) error
 		return nil
 	}
 	if bet != nil {
-		return errors.New("user already placed a bet on this poll")
+		return ErrUserAlreadyBet
 	}
 
 	return nil
@@ -88,7 +88,7 @@ func (betService *service) UpdateBetsByPollId(pollID string) error {
 		} else {
 			bet.BetStatus = Lost
 		}
-		
+
 		if err := betService.betRepo.UpdateBet(&bet); err != nil {
 			return fmt.Errorf("failed to update bet: %w", err)
 		}
