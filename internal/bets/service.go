@@ -81,7 +81,7 @@ func (betService *service) UpdateBetsByPollId(pollID string) error {
 		return fmt.Errorf("failed to get bets for poll: %w", err)
 	}
 
-	pollResult := poll.Outcome
+	pollResult := int(poll.Outcome)
 	for _, bet := range betList {
 		if bet.SelectedOptionIndex == pollResult {
 			bet.BetStatus = Won

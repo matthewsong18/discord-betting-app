@@ -280,12 +280,12 @@ func (bot *Bot) handleSelectOutcomeButton(s *discordgo.Session, i *discordgo.Int
 		Options: []interface{}{
 			&StringOption{
 				Label:       poll.Options[0],
-				Value:       "0",
+				Value:       "1",
 				Description: "Option 1",
 			},
 			&StringOption{
 				Label:       poll.Options[1],
-				Value:       "1",
+				Value:       "2",
 				Description: "Option 2",
 			},
 		},
@@ -379,7 +379,7 @@ func (bot *Bot) handleSelectOutcomeDropdown(s *discordgo.Session, i *discordgo.I
 		return
 	}
 
-	if err := bot.PollService.SelectOutcome(pollID, optionIndex); err != nil {
+	if err := bot.PollService.SelectOutcome(pollID, polls.OutcomeStatus(optionIndex)); err != nil {
 		log.Printf("Error selecting outcome: %v", err)
 		return
 	}

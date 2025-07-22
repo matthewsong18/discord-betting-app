@@ -5,7 +5,7 @@ type Poll struct {
 	Title   string
 	Options []string
 	Status  PollStatus
-	Outcome int
+	Outcome OutcomeStatus
 }
 
 type PollStatus int
@@ -13,4 +13,12 @@ type PollStatus int
 const (
 	Open PollStatus = iota
 	Closed
+)
+
+type OutcomeStatus int
+
+const (
+	Option1 OutcomeStatus = iota
+	Option2
+	Pending
 )

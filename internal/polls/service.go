@@ -6,8 +6,6 @@ import (
 	"github.com/google/uuid"
 )
 
-const NoOutcomeYet = -1
-
 type service struct {
 	pollRepo PollRepository
 }
@@ -29,7 +27,7 @@ func (s *service) CreatePoll(title string, options []string) (*Poll, error) {
 		Title:   title,
 		Options: options,
 		Status:  Open,
-		Outcome: NoOutcomeYet,
+		Outcome: Pending,
 	}
 
 	err := s.pollRepo.Save(poll)
@@ -62,14 +60,10 @@ func (s *service) ClosePoll(pollID string) error {
 	return nil
 }
 
-func (s *service) SelectOutcome(pollID string, outcomeIndex int) error {
+func (s *service) SelectOutcome(pollID string, outcomeIndex OutcomeStatus) error {
 	poll, err := s.pollRepo.GetById(pollID)
 	if err != nil {
 		return fmt.Errorf("failed to get poll by ID: %w", err)
-	}
-
-	if outcomeIndex < 0 || outcomeIndex >= len(poll.Options) {
-		return errors.New("invalid outcome index")
 	}
 
 	poll.Outcome = outcomeIndex

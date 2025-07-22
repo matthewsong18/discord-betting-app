@@ -5,7 +5,7 @@ import "errors"
 type PollService interface {
 	CreatePoll(title string, options []string) (*Poll, error)
 	ClosePoll(pollID string) error
-	SelectOutcome(pollID string, outcomeIndex int) error
+	SelectOutcome(pollID string, outcomeIndex OutcomeStatus) error
 	GetPollById(id string) (*Poll, error)
 	GetOpenPolls() ([]*Poll, error)
 }
