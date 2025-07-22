@@ -1,5 +1,7 @@
 package polls
 
+import "errors"
+
 type PollService interface {
 	CreatePoll(title string, options []string) (*Poll, error)
 	ClosePoll(pollID string) error
@@ -15,3 +17,5 @@ type PollRepository interface {
 	Update(poll *Poll) error
 	Delete(pollID string) error
 }
+
+var ErrPollIsAlreadyClosed = errors.New("poll is already closed")

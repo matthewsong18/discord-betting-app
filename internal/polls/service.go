@@ -50,6 +50,10 @@ func (s *service) ClosePoll(pollID string) error {
 		return fmt.Errorf("failed to get poll by ID: %w", err)
 	}
 
+	if poll.Status != Open {
+		return ErrPollIsAlreadyClosed
+	}
+
 	poll.Status = Closed
 	if err := s.pollRepo.Update(poll); err != nil {
 		return fmt.Errorf("failed to update poll status: %w", err)

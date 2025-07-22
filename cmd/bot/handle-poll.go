@@ -4,6 +4,7 @@ import (
 	"betting-discord-bot/internal/polls"
 	"bytes"
 	"encoding/json"
+	"errors"
 	"fmt"
 	"github.com/bwmarrin/discordgo"
 	"io"
@@ -205,28 +206,45 @@ func sendPollMessage(title string, option1 string, option2 string, poll *polls.P
 func handleEndPoll(s *discordgo.Session, i *discordgo.InteractionCreate, bot *Bot, pollID string) {
 	if (i.Member.Permissions & discordgo.PermissionManageMessages) != discordgo.PermissionManageMessages {
 		log.Printf("User \"%s\" does not have permission to end polls", i.Member.User.GlobalName)
-		if err := s.InteractionRespond(i.Interaction, &discordgo.InteractionResponse{
-			Type: discordgo.InteractionResponseChannelMessageWithSource,
-			Data: &discordgo.InteractionResponseData{
-				Flags:   discordgo.MessageFlagsEphemeral,
-				Content: "You do not have permission to end polls",
-			},
-		}); err != nil {
-			log.Printf("Error sending \"user does not have permission\" error: %v", err)
-		}
+		sendInteractionResponse(s, i, "You do not have permission to end polls")
 		return
 	}
 
 	if err := bot.PollService.ClosePoll(pollID); err != nil {
+		if errors.Is(err, polls.ErrPollIsAlreadyClosed) {
+			log.Printf("Poll \"%s\" is already closed", pollID)
+
+			sendInteractionResponse(s, i, "The poll is already closed")
+
+			return
+		}
 		log.Printf("Error closing poll: %v", err)
 		return
 	}
 
-	if err := s.InteractionRespond(i.Interaction, &discordgo.InteractionResponse{
-		Type: discordgo.InteractionResponseDeferredMessageUpdate,
-	}); err != nil {
-		log.Printf("Error sending response to end poll: %v", err)
-	}
+	sendInteractionResponse(s, i, "The poll is closed")
 
 	log.Printf("User %s ended poll %s", i.Member.User.GlobalName, pollID)
+}
+
+func sendInteractionResponse(s *discordgo.Session, i *discordgo.InteractionCreate, message string) {
+	// Empty response
+	data := &discordgo.InteractionResponse{
+		Type: discordgo.InteractionResponseDeferredMessageUpdate,
+	}
+
+	// Message response
+	if message != "" {
+		data = &discordgo.InteractionResponse{
+			Type: discordgo.InteractionResponseChannelMessageWithSource,
+			Data: &discordgo.InteractionResponseData{
+				Flags:   discordgo.MessageFlagsEphemeral,
+				Content: message,
+			},
+		}
+	}
+
+	if err := s.InteractionRespond(i.Interaction, data); err != nil {
+		log.Printf("Error sending interaction response: %v", err)
+	}
 }
