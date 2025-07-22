@@ -316,14 +316,20 @@ func (bot *Bot) handleSelectOutcomeButton(s *discordgo.Session, i *discordgo.Int
 		},
 	}
 
-	jsonMessage, jsonErr := json.Marshal(message)
+	response := InteractionResponse{
+		Type: 4,
+		Data: message,
+	}
+
+	jsonMessage, jsonErr := json.Marshal(response)
 	if jsonErr != nil {
 		log.Printf("Error marshaling selectOutcomeDropdown: %v", jsonErr)
 		return
 	}
 
-	channelID := i.ChannelID
-	url := fmt.Sprintf("https://discord.com/api/v10/channels/%s/messages", channelID)
+	interactionID := i.ID
+	interactionToken := i.Token
+	url := fmt.Sprintf("https://discord.com/api/v10/interactions/%s/%s/callback", interactionID, interactionToken)
 	request, requestErr := http.NewRequest("POST", url, bytes.NewBuffer(jsonMessage))
 	if requestErr != nil {
 		log.Printf("error creating request: %v", requestErr)
@@ -356,8 +362,6 @@ func (bot *Bot) handleSelectOutcomeButton(s *discordgo.Session, i *discordgo.Int
 	}
 
 	log.Printf("Dropdown menu successfully sent to Discord")
-
-	sendInteractionResponse(s, i, "")
 }
 
 func (bot *Bot) handleSelectOutcomeDropdown(s *discordgo.Session, i *discordgo.InteractionCreate) {

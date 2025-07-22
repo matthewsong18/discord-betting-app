@@ -18,6 +18,11 @@ type MessageSend struct {
 	Components []interface{} `json:"components"`
 }
 
+type InteractionResponse struct {
+	Type int         `json:"type"`
+	Data MessageSend `json:"data"`
+}
+
 type TextDisplay struct {
 	Type    int    `json:"type"`
 	Content string `json:"content"`
