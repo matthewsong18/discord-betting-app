@@ -17,7 +17,18 @@ func (bot *Bot) interactionHandler(s *discordgo.Session, i *discordgo.Interactio
 		// This is a modal submission
 		bot.handleModalSubmit(s, i)
 	case discordgo.InteractionMessageComponent:
-		bot.handleButtonPress(s, i)
+		customID := i.MessageComponentData().CustomID
+		messageData := strings.Split(customID, ":")
+		switch messageData[0] {
+		case "bet":
+			log.Println("Routing bet interaction")
+			bot.handleButtonPress(s, i)
+		case "select":
+			log.Println("Routing select interaction")
+			bot.handleSelectOutcomeDropdown(s, i)
+		default:
+			log.Printf("Unknown interaction type received: %v", messageData[0])
+		}
 	default:
 		log.Printf("Unknown interaction type received: %v", i.Type)
 	}
@@ -76,10 +87,16 @@ func (bot *Bot) handleButtonPress(s *discordgo.Session, i *discordgo.Interaction
 		}
 	}
 
-	if optionIndex != 2 {
+	if optionIndex < 2 {
 		handleBet(s, i, bot, pollID, user, optionIndex)
 		return
 	}
 
-	handleEndPoll(s, i, bot, pollID)
+	if optionIndex == 2 {
+		handleEndPoll(s, i, bot, pollID)
+	}
+
+	if optionIndex == 3 {
+		bot.handleSelectOutcomeButton(s, i, pollID)
+	}
 }

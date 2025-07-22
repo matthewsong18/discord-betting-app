@@ -11,6 +11,8 @@ import (
 	"log"
 	"net/http"
 	"os"
+	"strconv"
+	"strings"
 )
 
 // handleCreatePollCommand responds to the `/create-poll` command by showing a modal.
@@ -144,12 +146,20 @@ func sendPollMessage(title string, option1 string, option2 string, poll *polls.P
 		CustomID: fmt.Sprintf("bet:%s:2", poll.ID),
 	}
 
+	selectOutcomeButton := Button{
+		Type:     2,
+		Style:    4,
+		Label:    "Select Outcome",
+		CustomID: fmt.Sprintf("bet:%s:3", poll.ID),
+	}
+
 	buttons := ActionRow{
 		Type: 1,
 		Components: []interface{}{
 			option1Button,
 			option2Button,
 			endPollButton,
+			selectOutcomeButton,
 		},
 	}
 
@@ -247,4 +257,129 @@ func sendInteractionResponse(s *discordgo.Session, i *discordgo.InteractionCreat
 	if err := s.InteractionRespond(i.Interaction, data); err != nil {
 		log.Printf("Error sending interaction response: %v", err)
 	}
+}
+
+func (bot *Bot) handleSelectOutcomeButton(s *discordgo.Session, i *discordgo.InteractionCreate, pollID string) {
+	poll, pollErr := bot.PollService.GetPollById(pollID)
+	if pollErr != nil {
+		log.Printf("Error getting poll: %v", pollErr)
+		return
+	}
+
+	textDisplay := TextDisplay{
+		Type:    10,
+		Content: "Choose the outcome of the poll.",
+	}
+
+	selectOutcomeDropdown := &StringSelect{
+		Type:        3,
+		CustomID:    fmt.Sprintf("select:%s", pollID),
+		Placeholder: "Select An Outcome",
+		MinValues:   1,
+		MaxValues:   1,
+		Options: []interface{}{
+			&StringOption{
+				Label:       poll.Options[0],
+				Value:       "0",
+				Description: "Option 1",
+			},
+			&StringOption{
+				Label:       poll.Options[1],
+				Value:       "1",
+				Description: "Option 2",
+			},
+		},
+	}
+
+	actionRow := ActionRow{
+		Type: 1,
+		Components: []interface{}{
+			selectOutcomeDropdown,
+		},
+	}
+
+	messageContainer := Container{
+		Type:        17,
+		AccentColor: 0xe32458,
+		Components: []interface{}{
+			textDisplay,
+			actionRow,
+		},
+	}
+
+	const permissions = IsComponentsV2 | MessageIsEphemeral
+
+	message := MessageSend{
+		Flags: permissions,
+		Components: []interface{}{
+			messageContainer,
+		},
+	}
+
+	jsonMessage, jsonErr := json.Marshal(message)
+	if jsonErr != nil {
+		log.Printf("Error marshaling selectOutcomeDropdown: %v", jsonErr)
+		return
+	}
+
+	channelID := i.ChannelID
+	url := fmt.Sprintf("https://discord.com/api/v10/channels/%s/messages", channelID)
+	request, requestErr := http.NewRequest("POST", url, bytes.NewBuffer(jsonMessage))
+	if requestErr != nil {
+		log.Printf("error creating request: %v", requestErr)
+		return
+	}
+
+	request.Header.Set("Content-Type", "application/json")
+	botToken := os.Getenv("TOKEN")
+	request.Header.Set("Authorization", fmt.Sprintf("Bot %s", botToken))
+
+	log.Println("Sending manual HTTP request to Discord API...")
+
+	resp, err := http.DefaultClient.Do(request)
+	if err != nil {
+		log.Printf("error sending HTTP request to Discord: %v", err)
+	}
+
+	defer func(Body io.ReadCloser) {
+		err := Body.Close()
+		if err != nil {
+			log.Printf("Error closing response body: %v", err)
+		}
+	}(resp.Body)
+
+	if resp.StatusCode < 200 || resp.StatusCode > 299 {
+		// If it's not a success, we read the error message Discord sent back.
+		bodyBytes, _ := io.ReadAll(resp.Body)
+		log.Printf("discord API returned a non-success status code %d: %s", resp.StatusCode, string(bodyBytes))
+		return
+	}
+
+	log.Printf("Dropdown menu successfully sent to Discord")
+
+	sendInteractionResponse(s, i, "")
+}
+
+func (bot *Bot) handleSelectOutcomeDropdown(s *discordgo.Session, i *discordgo.InteractionCreate) {
+	customID := i.MessageComponentData().CustomID
+	messageData := strings.Split(customID, ":")
+	pollID := messageData[1]
+	optionIndex, err := strconv.Atoi(i.MessageComponentData().Values[0])
+	if err != nil {
+		log.Printf("Error parsing option index: %v", err)
+		return
+	}
+
+	if _, pollErr := bot.PollService.GetPollById(pollID); pollErr != nil {
+		log.Printf("Error getting poll: %v", pollErr)
+		return
+	}
+
+	if err := bot.PollService.SelectOutcome(pollID, optionIndex); err != nil {
+		log.Printf("Error selecting outcome: %v", err)
+		return
+	}
+
+	log.Printf("Outcome has been selected for poll %s", pollID)
+	sendInteractionResponse(s, i, "The outcome of the poll has been selected.")
 }
