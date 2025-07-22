@@ -222,9 +222,7 @@ func sendPollMessage(title string, option1 string, option2 string, poll *polls.P
 }
 
 func handleEndPoll(s *discordgo.Session, i *discordgo.InteractionCreate, bot *Bot, pollID string) {
-	if (i.Member.Permissions & discordgo.PermissionManageMessages) != discordgo.PermissionManageMessages {
-		log.Printf("User \"%s\" does not have permission to end polls", i.Member.User.GlobalName)
-		sendInteractionResponse(s, i, "You do not have permission to end polls")
+	if doesNotHaveManageMemberPerm(s, i) {
 		return
 	}
 
@@ -243,6 +241,15 @@ func handleEndPoll(s *discordgo.Session, i *discordgo.InteractionCreate, bot *Bo
 	sendInteractionResponse(s, i, "The poll is closed")
 
 	log.Printf("User %s ended poll %s", i.Member.User.GlobalName, pollID)
+}
+
+func doesNotHaveManageMemberPerm(s *discordgo.Session, i *discordgo.InteractionCreate) bool {
+	if (i.Member.Permissions & discordgo.PermissionManageMessages) != discordgo.PermissionManageMessages {
+		log.Printf("User \"%s\" does not have permission to end polls", i.Member.User.GlobalName)
+		sendInteractionResponse(s, i, "You do not have permission to edit polls")
+		return true
+	}
+	return false
 }
 
 func sendInteractionResponse(s *discordgo.Session, i *discordgo.InteractionCreate, message string) {
@@ -268,6 +275,10 @@ func sendInteractionResponse(s *discordgo.Session, i *discordgo.InteractionCreat
 }
 
 func (bot *Bot) handleSelectOutcomeButton(s *discordgo.Session, i *discordgo.InteractionCreate, pollID string) {
+	if doesNotHaveManageMemberPerm(s, i) {
+		return
+	}
+
 	poll, pollErr := bot.PollService.GetPollById(pollID)
 	if pollErr != nil {
 		log.Printf("Error getting poll: %v", pollErr)
