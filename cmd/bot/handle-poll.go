@@ -285,6 +285,10 @@ func (bot *Bot) handleSelectOutcomeButton(s *discordgo.Session, i *discordgo.Int
 		return
 	}
 
+	if poll.Status == polls.Open {
+		sendInteractionResponse(s, i, "The poll is still open. You cannot select an outcome.")
+	}
+
 	textDisplay := TextDisplay{
 		Type:    10,
 		Content: "Choose the outcome of the poll.",
