@@ -109,7 +109,7 @@ func (bot *Bot) handlePollModalSubmit(s *discordgo.Session, i *discordgo.Interac
 	if err := s.InteractionRespond(i.Interaction, &discordgo.InteractionResponse{
 		Type: discordgo.InteractionResponseChannelMessageWithSource,
 		Data: &discordgo.InteractionResponseData{
-			Content: fmt.Sprint("Poll submitted"),
+			Content: fmt.Sprint("Reminder: You must end the poll before you are allowed to select an outcome."),
 			Flags:   discordgo.MessageFlagsEphemeral,
 		},
 	}); err != nil {
