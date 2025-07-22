@@ -163,11 +163,19 @@ func sendPollMessage(title string, option1 string, option2 string, poll *polls.P
 		},
 	}
 
-	message := MessageSend{
-		Flags: IsComponentsV2,
+	container := Container{
+		Type:        17,
+		AccentColor: 0xe32458,
 		Components: []interface{}{
 			pollTitle,
 			buttons,
+		},
+	}
+
+	message := MessageSend{
+		Flags: IsComponentsV2,
+		Components: []interface{}{
+			container,
 		},
 	}
 
