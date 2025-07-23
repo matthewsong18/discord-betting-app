@@ -2,15 +2,11 @@ package main
 
 import (
 	"betting-discord-bot/internal/polls"
-	"bytes"
 	"encoding/json"
 	"errors"
 	"fmt"
 	"github.com/bwmarrin/discordgo"
-	"io"
 	"log"
-	"net/http"
-	"os"
 	"strconv"
 	"strings"
 )
@@ -36,42 +32,21 @@ func (bot *Bot) handleCreatePollCommand(s *discordgo.Session, i *discordgo.Inter
 
 func pollModalComponents() []discordgo.MessageComponent {
 	return []discordgo.MessageComponent{
-		newTextInputRow(
-			"title",
-			"Poll Title",
-			"Who will win the grand finals?",
-			discordgo.TextInputShort,
-			300,
-			true,
-		),
-		newTextInputRow(
-			"option1",
-			"First Option",
-			"",
-			discordgo.TextInputShort,
-			100,
-			true,
-		),
-		newTextInputRow(
-			"option2",
-			"Second Option",
-			"",
-			discordgo.TextInputShort,
-			100,
-			true,
-		),
+		newTextInputRow("title", "Poll Title", "Who will win the grand finals?", 50),
+		newTextInputRow("option1", "First Option", "", 20),
+		newTextInputRow("option2", "Second Option", "", 20),
 	}
 }
 
-func newTextInputRow(customID, label, placeholder string, style discordgo.TextInputStyle, maxLength int, required bool) discordgo.ActionsRow {
+func newTextInputRow(customID, label, placeholder string, maxLength int) discordgo.ActionsRow {
 	return discordgo.ActionsRow{
 		Components: []discordgo.MessageComponent{
 			&discordgo.TextInput{
 				CustomID:    customID,
 				Label:       label,
 				Placeholder: placeholder,
-				Style:       style,
-				Required:    required,
+				Style:       discordgo.TextInputShort,
+				Required:    true,
 				MaxLength:   maxLength,
 			},
 		},
@@ -104,17 +79,8 @@ func (bot *Bot) handlePollModalSubmit(s *discordgo.Session, i *discordgo.Interac
 		return
 	}
 
-	// Send a confirmation message back to the user who submitted the modal.
-	// This message is "ephemeral," so only they can see it.
-	if err := s.InteractionRespond(i.Interaction, &discordgo.InteractionResponse{
-		Type: discordgo.InteractionResponseChannelMessageWithSource,
-		Data: &discordgo.InteractionResponseData{
-			Content: fmt.Sprint("Reminder: You must end the poll before you are allowed to select an outcome."),
-			Flags:   discordgo.MessageFlagsEphemeral,
-		},
-	}); err != nil {
-		log.Printf("Error sending modal confirmation: %v", err)
-	}
+	responseMessage := "Reminder: You must end the poll before you are allowed to select an outcome."
+	sendInteractionResponse(s, i, responseMessage)
 
 	sendPollMessage(title, option1, option2, poll, i)
 }
@@ -187,38 +153,7 @@ func sendPollMessage(title string, option1 string, option2 string, poll *polls.P
 
 	channelID := i.ChannelID
 	url := fmt.Sprintf("https://discord.com/api/v10/channels/%s/messages", channelID)
-	request, requestErr := http.NewRequest("POST", url, bytes.NewBuffer(jsonMessage))
-	if requestErr != nil {
-		log.Printf("error creating request: %v", requestErr)
-		return
-	}
-
-	request.Header.Set("Content-Type", "application/json")
-	botToken := os.Getenv("TOKEN")
-	request.Header.Set("Authorization", fmt.Sprintf("Bot %s", botToken))
-
-	log.Println("Sending manual HTTP request to Discord API...")
-
-	resp, err := http.DefaultClient.Do(request)
-	if err != nil {
-		log.Printf("error sending HTTP request to Discord: %v", err)
-	}
-
-	defer func(Body io.ReadCloser) {
-		err := Body.Close()
-		if err != nil {
-			log.Printf("Error closing response body: %v", err)
-		}
-	}(resp.Body)
-
-	if resp.StatusCode < 200 || resp.StatusCode > 299 {
-		// If it's not a success, we read the error message Discord sent back.
-		bodyBytes, _ := io.ReadAll(resp.Body)
-		log.Printf("discord API returned a non-success status code %d: %s", resp.StatusCode, string(bodyBytes))
-		return
-	}
-
-	log.Println("Successfully sent message with custom components.")
+	sendHttpRequest(url, jsonMessage)
 }
 
 func handleEndPoll(s *discordgo.Session, i *discordgo.InteractionCreate, bot *Bot, pollID string) {
@@ -353,38 +288,7 @@ func (bot *Bot) handleSelectOutcomeButton(s *discordgo.Session, i *discordgo.Int
 	interactionID := i.ID
 	interactionToken := i.Token
 	url := fmt.Sprintf("https://discord.com/api/v10/interactions/%s/%s/callback", interactionID, interactionToken)
-	request, requestErr := http.NewRequest("POST", url, bytes.NewBuffer(jsonMessage))
-	if requestErr != nil {
-		log.Printf("error creating request: %v", requestErr)
-		return
-	}
-
-	request.Header.Set("Content-Type", "application/json")
-	botToken := os.Getenv("TOKEN")
-	request.Header.Set("Authorization", fmt.Sprintf("Bot %s", botToken))
-
-	log.Println("Sending manual HTTP request to Discord API...")
-
-	resp, err := http.DefaultClient.Do(request)
-	if err != nil {
-		log.Printf("error sending HTTP request to Discord: %v", err)
-	}
-
-	defer func(Body io.ReadCloser) {
-		err := Body.Close()
-		if err != nil {
-			log.Printf("Error closing response body: %v", err)
-		}
-	}(resp.Body)
-
-	if resp.StatusCode < 200 || resp.StatusCode > 299 {
-		// If it's not a success, we read the error message Discord sent back.
-		bodyBytes, _ := io.ReadAll(resp.Body)
-		log.Printf("discord API returned a non-success status code %d: %s", resp.StatusCode, string(bodyBytes))
-		return
-	}
-
-	log.Printf("Dropdown menu successfully sent to Discord")
+	sendHttpRequest(url, jsonMessage)
 }
 
 func (bot *Bot) handleSelectOutcomeDropdown(s *discordgo.Session, i *discordgo.InteractionCreate) {
