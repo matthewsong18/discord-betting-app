@@ -1,0 +1,187 @@
+package main
+
+import (
+	"betting-discord-bot/internal/bets"
+	"betting-discord-bot/internal/polls"
+	"betting-discord-bot/internal/users"
+	"encoding/json"
+	"errors"
+	"fmt"
+	"github.com/bwmarrin/discordgo"
+	"log"
+	"strconv"
+	"strings"
+)
+
+func handleBet(s *discordgo.Session, i *discordgo.InteractionCreate, bot *Bot, pollID string, user *users.User, optionIndex int) {
+	bet, betErr := bot.BetService.CreateBet(pollID, user.ID, optionIndex)
+	if betErr != nil {
+		if errors.Is(betErr, bets.ErrUserAlreadyBet) {
+			if err := s.InteractionRespond(i.Interaction, &discordgo.InteractionResponse{
+				Type: discordgo.InteractionResponseChannelMessageWithSource,
+				Data: &discordgo.InteractionResponseData{
+					Content: fmt.Sprint("You have already bet on this poll."),
+					Flags:   discordgo.MessageFlagsEphemeral,
+				},
+			}); err != nil {
+				log.Printf("Error sending invalid action response: %v", err)
+			}
+		}
+
+		if errors.Is(betErr, bets.ErrPollIsClosed) {
+			if err := s.InteractionRespond(i.Interaction, &discordgo.InteractionResponse{
+				Type: discordgo.InteractionResponseChannelMessageWithSource,
+				Data: &discordgo.InteractionResponseData{
+					Content: fmt.Sprint("This poll is closed. You cannot place a bet."),
+					Flags:   discordgo.MessageFlagsEphemeral,
+				},
+			}); err != nil {
+				log.Printf("Error sending poll is closed response: %v", err)
+			}
+
+		}
+
+		log.Printf("Error creating bet: %v", betErr)
+		return
+	}
+
+	log.Printf("Bet created: %v", bet)
+
+	if err := s.InteractionRespond(i.Interaction, &discordgo.InteractionResponse{
+		Type: discordgo.InteractionResponseChannelMessageWithSource,
+		Data: &discordgo.InteractionResponseData{
+			Content: fmt.Sprint("Bet submitted"),
+			Flags:   discordgo.MessageFlagsEphemeral,
+		},
+	}); err != nil {
+		log.Printf("Error sending bet confirmation: %v", err)
+	}
+}
+
+func handleEndPoll(s *discordgo.Session, i *discordgo.InteractionCreate, bot *Bot, pollID string) {
+	if doesNotHaveManageMemberPerm(s, i) {
+		return
+	}
+
+	if err := bot.PollService.ClosePoll(pollID); err != nil {
+		if errors.Is(err, polls.ErrPollIsAlreadyClosed) {
+			log.Printf("Poll \"%s\" is already closed", pollID)
+
+			sendInteractionResponse(s, i, "The poll is already closed")
+
+			return
+		}
+		log.Printf("Error closing poll: %v", err)
+		return
+	}
+
+	sendInteractionResponse(s, i, "The poll is closed")
+
+	log.Printf("User %s ended poll %s", i.Member.User.GlobalName, pollID)
+}
+
+func (bot *Bot) handleSelectOutcomeButton(s *discordgo.Session, i *discordgo.InteractionCreate, pollID string) {
+	if doesNotHaveManageMemberPerm(s, i) {
+		return
+	}
+
+	poll, pollErr := bot.PollService.GetPollById(pollID)
+	if pollErr != nil {
+		log.Printf("Error getting poll: %v", pollErr)
+		return
+	}
+
+	if poll.Status == polls.Open {
+		sendInteractionResponse(s, i, "The poll is still open. You cannot select an outcome.")
+	}
+
+	textDisplay := TextDisplay{
+		Type:    10,
+		Content: "Choose the outcome of the poll.",
+	}
+
+	selectOutcomeDropdown := &StringSelect{
+		Type:        3,
+		CustomID:    fmt.Sprintf("select:%s", pollID),
+		Placeholder: "Select An Outcome",
+		MinValues:   1,
+		MaxValues:   1,
+		Options: []interface{}{
+			&StringOption{
+				Label:       poll.Options[0],
+				Value:       "1",
+				Description: "Option 1",
+			},
+			&StringOption{
+				Label:       poll.Options[1],
+				Value:       "2",
+				Description: "Option 2",
+			},
+		},
+	}
+
+	actionRow := ActionRow{
+		Type: 1,
+		Components: []interface{}{
+			selectOutcomeDropdown,
+		},
+	}
+
+	messageContainer := Container{
+		Type:        17,
+		AccentColor: 0xe32458,
+		Components: []interface{}{
+			textDisplay,
+			actionRow,
+		},
+	}
+
+	const permissions = IsComponentsV2 | MessageIsEphemeral
+
+	message := MessageSend{
+		Flags: permissions,
+		Components: []interface{}{
+			messageContainer,
+		},
+	}
+
+	response := InteractionResponse{
+		Type: 4,
+		Data: message,
+	}
+
+	jsonMessage, jsonErr := json.Marshal(response)
+	if jsonErr != nil {
+		log.Printf("Error marshaling selectOutcomeDropdown: %v", jsonErr)
+		return
+	}
+
+	interactionID := i.ID
+	interactionToken := i.Token
+	url := fmt.Sprintf("https://discord.com/api/v10/interactions/%s/%s/callback", interactionID, interactionToken)
+	sendHttpRequest(url, jsonMessage)
+}
+
+func (bot *Bot) handleSelectOutcomeDropdown(s *discordgo.Session, i *discordgo.InteractionCreate) {
+	customID := i.MessageComponentData().CustomID
+	messageData := strings.Split(customID, ":")
+	pollID := messageData[1]
+	optionIndex, err := strconv.Atoi(i.MessageComponentData().Values[0])
+	if err != nil {
+		log.Printf("Error parsing option index: %v", err)
+		return
+	}
+
+	if _, pollErr := bot.PollService.GetPollById(pollID); pollErr != nil {
+		log.Printf("Error getting poll: %v", pollErr)
+		return
+	}
+
+	if err := bot.PollService.SelectOutcome(pollID, polls.OutcomeStatus(optionIndex)); err != nil {
+		log.Printf("Error selecting outcome: %v", err)
+		return
+	}
+
+	log.Printf("Outcome has been selected for poll %s", pollID)
+	sendInteractionResponse(s, i, "The outcome of the poll has been selected.")
+}

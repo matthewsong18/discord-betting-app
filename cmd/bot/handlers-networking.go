@@ -3,6 +3,7 @@ package main
 import (
 	"bytes"
 	"fmt"
+	"github.com/bwmarrin/discordgo"
 	"io"
 	"log"
 	"net/http"
@@ -42,4 +43,26 @@ func sendHttpRequest(url string, jsonMessage []byte) {
 	}
 
 	log.Println("Successfully sent http request to Discord.")
+}
+
+func sendInteractionResponse(s *discordgo.Session, i *discordgo.InteractionCreate, message string) {
+	// Empty response
+	data := &discordgo.InteractionResponse{
+		Type: discordgo.InteractionResponseDeferredMessageUpdate,
+	}
+
+	// Message response
+	if message != "" {
+		data = &discordgo.InteractionResponse{
+			Type: discordgo.InteractionResponseChannelMessageWithSource,
+			Data: &discordgo.InteractionResponseData{
+				Flags:   discordgo.MessageFlagsEphemeral,
+				Content: message,
+			},
+		}
+	}
+
+	if err := s.InteractionRespond(i.Interaction, data); err != nil {
+		log.Printf("Error sending interaction response: %v", err)
+	}
 }

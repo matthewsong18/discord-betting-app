@@ -12,29 +12,18 @@ import (
 func (bot *Bot) interactionHandler(s *discordgo.Session, i *discordgo.InteractionCreate) {
 	switch i.Type {
 	case discordgo.InteractionApplicationCommand:
-		bot.handleSlashCommand(s, i)
+		bot.handleSlashCommands(s, i)
 	case discordgo.InteractionModalSubmit:
 		// This is a modal submission
-		bot.handleModalSubmit(s, i)
+		bot.handleModals(s, i)
 	case discordgo.InteractionMessageComponent:
-		customID := i.MessageComponentData().CustomID
-		messageData := strings.Split(customID, ":")
-		switch messageData[0] {
-		case "bet":
-			log.Println("Routing bet interaction")
-			bot.handleButtonPress(s, i)
-		case "select":
-			log.Println("Routing select interaction")
-			bot.handleSelectOutcomeDropdown(s, i)
-		default:
-			log.Printf("Unknown interaction type received: %v", messageData[0])
-		}
+		bot.handleMessageComponents(s, i)
 	default:
 		log.Printf("Unknown interaction type received: %v", i.Type)
 	}
 }
 
-func (bot *Bot) handleSlashCommand(s *discordgo.Session, i *discordgo.InteractionCreate) {
+func (bot *Bot) handleSlashCommands(s *discordgo.Session, i *discordgo.InteractionCreate) {
 	commandName := i.ApplicationCommandData().Name
 	switch commandName {
 	case "create-poll":
@@ -44,7 +33,7 @@ func (bot *Bot) handleSlashCommand(s *discordgo.Session, i *discordgo.Interactio
 	}
 }
 
-func (bot *Bot) handleModalSubmit(s *discordgo.Session, i *discordgo.InteractionCreate) {
+func (bot *Bot) handleModals(s *discordgo.Session, i *discordgo.InteractionCreate) {
 	customID := i.ModalSubmitData().CustomID
 	switch customID {
 	case "poll_modal":
@@ -54,7 +43,22 @@ func (bot *Bot) handleModalSubmit(s *discordgo.Session, i *discordgo.Interaction
 	}
 }
 
-func (bot *Bot) handleButtonPress(s *discordgo.Session, i *discordgo.InteractionCreate) {
+func (bot *Bot) handleMessageComponents(s *discordgo.Session, i *discordgo.InteractionCreate) {
+	customID := i.MessageComponentData().CustomID
+	messageData := strings.Split(customID, ":")
+	switch messageData[0] {
+	case "bet":
+		log.Println("Routing bet interaction")
+		bot.handleButtonPresses(s, i)
+	case "select":
+		log.Println("Routing select interaction")
+		bot.handleSelectOutcomeDropdown(s, i)
+	default:
+		log.Printf("Unknown interaction type received: %v", messageData[0])
+	}
+}
+
+func (bot *Bot) handleButtonPresses(s *discordgo.Session, i *discordgo.InteractionCreate) {
 	customID := i.MessageComponentData().CustomID
 	betData := strings.Split(customID, ":")
 
