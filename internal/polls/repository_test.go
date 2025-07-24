@@ -90,7 +90,7 @@ func testSaveAndReceive(t *testing.T, repo PollRepository) {
 			"Option 1",
 			"Option 2",
 		},
-		Outcome: 0,
+		Outcome: Pending,
 		Status:  Open,
 	}
 
@@ -130,7 +130,7 @@ func testUpdate(t *testing.T, repo PollRepository) {
 			"Option 1",
 			"Option 2",
 		},
-		Outcome: 0,
+		Outcome: Pending,
 	}
 
 	// ACT: Save the poll first
@@ -140,6 +140,9 @@ func testUpdate(t *testing.T, repo PollRepository) {
 
 	// ACT: Update the poll
 	pollToUpdate.Title = "Updated Poll Title"
+	pollToUpdate.Status = Closed
+	pollToUpdate.Outcome = Option2
+	pollToUpdate.Options[0] = "Replaced"
 	if err := repo.Update(pollToUpdate); err != nil {
 		t.Fatalf("Update() returned an unexpected error: %v", err)
 	}
@@ -153,6 +156,15 @@ func testUpdate(t *testing.T, repo PollRepository) {
 	// ASSERT
 	if retrievedPoll.Title != "Updated Poll Title" {
 		t.Errorf("Expected updated poll title %q, but got %q", "Updated Poll Title", retrievedPoll.Title)
+	}
+	if retrievedPoll.Status != pollToUpdate.Status {
+		t.Errorf("Expected poll status %v, but got %v", pollToUpdate.Status, retrievedPoll.Status)
+	}
+	if retrievedPoll.Outcome != pollToUpdate.Outcome {
+		t.Errorf("Expected poll outcome %v, but got %v", pollToUpdate.Outcome, retrievedPoll.Outcome)
+	}
+	if retrievedPoll.Options[0] != "Replaced" {
+		t.Errorf("Expected updated option %q, but got %q", "Replaced", retrievedPoll.Options[0])
 	}
 }
 

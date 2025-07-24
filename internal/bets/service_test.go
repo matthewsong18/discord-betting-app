@@ -2,6 +2,7 @@ package bets
 
 import (
 	"betting-discord-bot/internal/polls"
+	"errors"
 	"testing"
 )
 
@@ -78,8 +79,10 @@ func TestPreventingMultipleBetsPerPoll(t *testing.T) {
 		t.Fatal("Expected an error when creating a second bet for the same poll, but got nil")
 	}
 
+	if !errors.Is(err, ErrUserAlreadyBet) {
+		t.Errorf("Expected error message '%s', but got '%s'", ErrUserAlreadyBet.Error(), err.Error())
+	}
 	if err.Error() != "user already placed a bet on this poll" {
-		t.Errorf("Expected error message 'user bet already exists for this poll', but got '%s'", err.Error())
 	}
 }
 
@@ -104,8 +107,8 @@ func TestCannotBetOnClosedPoll(t *testing.T) {
 	}
 
 	// Check if the error message is as expected
-	if err.Error() != "cannot bet on a closed poll" {
-		t.Errorf("Expected error message 'cannot bet on a closed poll', but got '%s'", err.Error())
+	if !errors.Is(err, ErrPollIsClosed) {
+		t.Errorf("Expected error message '%s', but got '%s'", ErrPollIsClosed.Error(), err.Error())
 	}
 }
 
@@ -138,7 +141,7 @@ func TestGetBetOutcome(t *testing.T) {
 		t.Fatal("ClosePoll returned an unexpected error:", err)
 	}
 
-	err = pollService.SelectOutcome(poll.ID, selectedOptionIndex)
+	err = pollService.SelectOutcome(poll.ID, polls.OutcomeStatus(selectedOptionIndex))
 	if err != nil {
 		t.Fatal("SelectOutcome returned an unexpected error:", err)
 	}

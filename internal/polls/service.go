@@ -60,13 +60,13 @@ func (s *service) ClosePoll(pollID string) error {
 	return nil
 }
 
-func (s *service) SelectOutcome(pollID string, outcomeIndex OutcomeStatus) error {
+func (s *service) SelectOutcome(pollID string, outcomeStatus OutcomeStatus) error {
 	poll, err := s.pollRepo.GetById(pollID)
 	if err != nil {
 		return fmt.Errorf("failed to get poll by ID: %w", err)
 	}
 
-	poll.Outcome = outcomeIndex
+	poll.Outcome = outcomeStatus
 
 	if err := s.pollRepo.Update(poll); err != nil {
 		return fmt.Errorf("failed to update poll outcome: %w", err)

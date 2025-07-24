@@ -153,7 +153,7 @@ func testSelectOutcome(t *testing.T, service PollService) {
 	}
 
 	// Test selecting an outcome
-	teamAIndex := 0
+	teamAIndex := Option1
 	err = service.SelectOutcome(poll.ID, teamAIndex)
 	if err != nil {
 		t.Fatal("SelectOutcome returned an unexpected error", err)

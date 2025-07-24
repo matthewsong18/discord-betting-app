@@ -27,12 +27,12 @@ func (repo *libSQLRepository) Save(poll *Poll) error {
 }
 
 func saveToPollsTable(poll *Poll, repo *libSQLRepository) error {
-	query := "INSERT INTO polls (id, title, status) VALUES (?, ?, ?)"
+	query := "INSERT INTO polls (id, title, status, outcome) VALUES (?, ?, ?, ?)"
 	preparedStatement, prepareError := repo.db.Prepare(query)
 	if prepareError != nil {
 		return fmt.Errorf("error while preparing statement: %w", prepareError)
 	}
-	if result, execErr := preparedStatement.Exec(poll.ID, poll.Title, poll.Status); execErr != nil {
+	if result, execErr := preparedStatement.Exec(poll.ID, poll.Title, poll.Status, poll.Outcome); execErr != nil {
 		return fmt.Errorf("error while executing statement: %w", execErr)
 	} else {
 		rowsAffected, _ := result.RowsAffected()
@@ -80,7 +80,7 @@ func (repo *libSQLRepository) GetById(id string) (*Poll, error) {
 }
 
 func getFromPollTable(id string, repo *libSQLRepository) (*Poll, error) {
-	query := "SELECT id, title, status FROM polls WHERE id = ?"
+	query := "SELECT id, title, status, outcome FROM polls WHERE id = ?"
 	preparedStatement, err := repo.db.Prepare(query)
 	if err != nil {
 		return nil, fmt.Errorf("error while preparing statement: %w", err)
@@ -88,7 +88,7 @@ func getFromPollTable(id string, repo *libSQLRepository) (*Poll, error) {
 
 	row := preparedStatement.QueryRow(id)
 	poll := &Poll{}
-	if err := row.Scan(&poll.ID, &poll.Title, &poll.Status); err != nil {
+	if err := row.Scan(&poll.ID, &poll.Title, &poll.Status, &poll.Outcome); err != nil {
 		if errors.Is(err, sql.ErrNoRows) {
 			return nil, fmt.Errorf("poll with id %s not found", id)
 		}
@@ -126,13 +126,13 @@ func getFromOptionsTable(pollID string, repo *libSQLRepository) ([]string, error
 }
 
 func (repo *libSQLRepository) Update(poll *Poll) error {
-	query := "UPDATE polls SET title = ?, status = ? WHERE id = ?"
+	query := "UPDATE polls SET title = ?, status = ?, outcome = ? WHERE id = ?"
 	preparedStatement, prepareError := repo.db.Prepare(query)
 	if prepareError != nil {
 		return fmt.Errorf("error while preparing statement: %w", prepareError)
 	}
 
-	result, execErr := preparedStatement.Exec(poll.Title, poll.Status, poll.ID)
+	result, execErr := preparedStatement.Exec(poll.Title, poll.Status, poll.Outcome, poll.ID)
 	if execErr != nil {
 		return fmt.Errorf("error while executing statement: %w", execErr)
 	}

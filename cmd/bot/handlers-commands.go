@@ -6,6 +6,8 @@ import (
 )
 
 func (bot *Bot) handleCreatePollCommand(s *discordgo.Session, i *discordgo.InteractionCreate) {
+	log.Println("A user requested to create a poll")
+
 	modalData := &discordgo.InteractionResponseData{
 		CustomID:   "poll_modal", // The ID we'll check for on submission
 		Title:      "Create a New Poll",

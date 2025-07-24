@@ -33,6 +33,8 @@ func newTextInputRow(customID, label, placeholder string, maxLength int) discord
 
 // handlePollModalSubmit processes the data from the poll creation modal.
 func (bot *Bot) handlePollModalSubmit(s *discordgo.Session, i *discordgo.InteractionCreate) {
+	log.Println("A user submitted a poll modal")
+
 	data := i.ModalSubmitData()
 
 	// Safely parse the data from the modal.

@@ -159,16 +159,67 @@ func (bot *Bot) handleSelectOutcomeDropdown(s *discordgo.Session, i *discordgo.I
 		return
 	}
 
-	if _, pollErr := bot.PollService.GetPollById(pollID); pollErr != nil {
+	poll, pollErr := bot.PollService.GetPollById(pollID)
+	if pollErr != nil {
 		log.Printf("Error getting poll: %v", pollErr)
 		return
 	}
 
-	if err := bot.PollService.SelectOutcome(pollID, polls.OutcomeStatus(optionIndex)); err != nil {
+	var pollOutcome polls.OutcomeStatus
+	switch optionIndex {
+	case 1:
+		pollOutcome = polls.Option1
+	case 2:
+		pollOutcome = polls.Option2
+	default:
+		log.Panicf("Invalid option index: %d", optionIndex)
+	}
+
+	if err := bot.PollService.SelectOutcome(pollID, pollOutcome); err != nil {
 		log.Printf("Error selecting outcome: %v", err)
 		return
 	}
 
-	log.Printf("Outcome has been selected for poll %s", pollID)
+	poll, pollErr = bot.PollService.GetPollById(pollID)
+	if pollErr != nil {
+		log.Panicf("Error getting poll: %v", pollErr)
+	}
+
+	if poll.Outcome != pollOutcome {
+		log.Panicf("Poll did not update correctly. Expected %d but got %d", pollOutcome, poll.Outcome)
+	}
+
+	log.Printf("Outcome (%d):(%d) has been selected for poll %s", pollOutcome, int(poll.Outcome), pollID)
 	sendInteractionResponse(s, i, "The outcome of the poll has been selected.")
+
+	messageString := NewTextDisplay(fmt.Sprintf(
+		"Outcome for **%s** between **%s** and **%s** has been decided.\n\nThe outcome is **%s**.",
+		poll.Title,
+		poll.Options[0],
+		poll.Options[1],
+		poll.Options[poll.Outcome],
+	))
+
+	messageContainer := NewContainer(
+		0xe32458,
+		[]interface{}{
+			messageString,
+		},
+	)
+
+	const permissions = IsComponentsV2
+	messageSend := MessageSend{
+		Flags: permissions,
+		Components: []interface{}{
+			messageContainer,
+		},
+	}
+
+	jsonMessage, jsonErr := json.Marshal(messageSend)
+	if jsonErr != nil {
+		log.Panicf("Error marshaling selectOutcomeDropdown:%v", jsonErr)
+	}
+
+	url := createMessageAPI(i.ChannelID)
+	sendHttpRequest(url, jsonMessage)
 }

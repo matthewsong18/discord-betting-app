@@ -10,6 +10,8 @@ import (
 	"os"
 )
 
+const DiscordApi = `https://discord.com/api/v10`
+
 func sendHttpRequest(url string, jsonMessage []byte) {
 	request, requestErr := http.NewRequest("POST", url, bytes.NewBuffer(jsonMessage))
 	if requestErr != nil {
@@ -65,4 +67,8 @@ func sendInteractionResponse(s *discordgo.Session, i *discordgo.InteractionCreat
 	if err := s.InteractionRespond(i.Interaction, data); err != nil {
 		log.Printf("Error sending interaction response: %v", err)
 	}
+}
+
+func createMessageAPI(channelID string) string {
+	return DiscordApi + fmt.Sprintf("/channels/%s/messages", channelID)
 }
