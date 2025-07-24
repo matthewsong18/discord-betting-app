@@ -95,18 +95,14 @@ func (bot *Bot) handleSelectOutcomeButton(s *discordgo.Session, i *discordgo.Int
 		sendInteractionResponse(s, i, "The poll is still open. You cannot select an outcome.")
 	}
 
-	textDisplay := TextDisplay{
-		Type:    10,
-		Content: "Choose the outcome of the poll.",
-	}
+	textDisplay := NewTextDisplay("Choose the outcome of the poll")
 
-	selectOutcomeDropdown := &StringSelect{
-		Type:        3,
-		CustomID:    fmt.Sprintf("select:%s", pollID),
-		Placeholder: "Select An Outcome",
-		MinValues:   1,
-		MaxValues:   1,
-		Options: []interface{}{
+	selectOutcomeDropdown := NewStringSelect(
+		"Select An Outcome",
+		1,
+		1,
+		fmt.Sprintf("select:%s", pollID),
+		[]interface{}{
 			&StringOption{
 				Label:       poll.Options[0],
 				Value:       "1",
@@ -118,23 +114,17 @@ func (bot *Bot) handleSelectOutcomeButton(s *discordgo.Session, i *discordgo.Int
 				Description: "Option 2",
 			},
 		},
-	}
+	)
 
-	actionRow := ActionRow{
-		Type: 1,
-		Components: []interface{}{
-			selectOutcomeDropdown,
-		},
-	}
+	actionRow := NewActionRow([]interface{}{selectOutcomeDropdown})
 
-	messageContainer := Container{
-		Type:        17,
-		AccentColor: 0xe32458,
-		Components: []interface{}{
+	messageContainer := NewContainer(
+		0xe32458,
+		[]interface{}{
 			textDisplay,
 			actionRow,
 		},
-	}
+	)
 
 	const permissions = IsComponentsV2 | MessageIsEphemeral
 
@@ -145,10 +135,7 @@ func (bot *Bot) handleSelectOutcomeButton(s *discordgo.Session, i *discordgo.Int
 		},
 	}
 
-	response := InteractionResponse{
-		Type: 4,
-		Data: message,
-	}
+	response := NewInteractionResponse(ChannelMessageWithSource, message)
 
 	jsonMessage, jsonErr := json.Marshal(response)
 	if jsonErr != nil {
