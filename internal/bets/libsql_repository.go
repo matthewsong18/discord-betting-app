@@ -16,7 +16,7 @@ func NewLibSQLRepository(db *sql.DB) BetRepository {
 	}
 }
 
-func (repo libSQLRepository) Save(bet *Bet) error {
+func (repo libSQLRepository) Save(bet *bet) error {
 	query := `INSERT INTO bets (poll_id, user_id, selected_option_index, bet_status) VALUES (?, ?, ?, ?)`
 
 	preparedStatement, preparedErr := repo.db.Prepare(query)
@@ -24,7 +24,7 @@ func (repo libSQLRepository) Save(bet *Bet) error {
 		return fmt.Errorf("error while preparing save bet statement: %w", preparedErr)
 	}
 
-	_, execErr := preparedStatement.Exec(bet.PollId, bet.UserId, bet.SelectedOptionIndex, bet.BetStatus)
+	_, execErr := preparedStatement.Exec(bet.PollID, bet.UserID, bet.SelectedOptionIndex, bet.BetStatus)
 	if execErr != nil {
 		return fmt.Errorf("error while executing save bet statement: %w", execErr)
 	}
@@ -32,16 +32,16 @@ func (repo libSQLRepository) Save(bet *Bet) error {
 	return nil
 }
 
-func (repo libSQLRepository) GetByPollIdAndUserId(pollID string, userID string) (*Bet, error) {
+func (repo libSQLRepository) GetByPollIdAndUserId(pollID string, userID string) (*bet, error) {
 	query := "SELECT poll_id, user_id, selected_option_index, bet_status FROM bets WHERE poll_id = ? AND user_id = ?"
 	preparedStatement, preparedErr := repo.db.Prepare(query)
 	if preparedErr != nil {
 		return nil, fmt.Errorf("error while preparing get bet by poll_id and user_id statement: %w", preparedErr)
 	}
 
-	var bet Bet
+	var bet bet
 	row := preparedStatement.QueryRow(pollID, userID)
-	if scanErr := row.Scan(&bet.PollId, &bet.UserId, &bet.SelectedOptionIndex, &bet.BetStatus); scanErr != nil {
+	if scanErr := row.Scan(&bet.PollID, &bet.UserID, &bet.SelectedOptionIndex, &bet.BetStatus); scanErr != nil {
 		if errors.Is(scanErr, sql.ErrNoRows) {
 			return nil, ErrBetNotFound
 		}
@@ -51,7 +51,7 @@ func (repo libSQLRepository) GetByPollIdAndUserId(pollID string, userID string) 
 	return &bet, nil
 }
 
-func (repo libSQLRepository) GetBetsFromUser(userID string) ([]Bet, error) {
+func (repo libSQLRepository) GetBetsFromUser(userID string) ([]*bet, error) {
 	query := "SELECT poll_id, user_id, selected_option_index, bet_status FROM bets WHERE user_id = ?"
 	preparedStatement, preparedErr := repo.db.Prepare(query)
 	if preparedErr != nil {
@@ -70,13 +70,13 @@ func (repo libSQLRepository) GetBetsFromUser(userID string) ([]Bet, error) {
 		}
 	}(rows)
 
-	var bets []Bet
+	var bets []*bet
 	for rows.Next() {
-		var bet Bet
-		if scanErr := rows.Scan(&bet.PollId, &bet.UserId, &bet.SelectedOptionIndex, &bet.BetStatus); scanErr != nil {
+		var bet bet
+		if scanErr := rows.Scan(&bet.PollID, &bet.UserID, &bet.SelectedOptionIndex, &bet.BetStatus); scanErr != nil {
 			return nil, fmt.Errorf("error while scanning bet: %w", scanErr)
 		}
-		bets = append(bets, bet)
+		bets = append(bets, &bet)
 	}
 
 	if err := rows.Err(); err != nil {
@@ -86,7 +86,7 @@ func (repo libSQLRepository) GetBetsFromUser(userID string) ([]Bet, error) {
 	return bets, nil
 }
 
-func (repo libSQLRepository) GetBetsByPollId(pollID string) ([]Bet, error) {
+func (repo libSQLRepository) GetBetsByPollId(pollID string) ([]*bet, error) {
 	query := "SELECT poll_id, user_id, selected_option_index, bet_status FROM bets WHERE poll_id = ?"
 	preparedStatement, preparedErr := repo.db.Prepare(query)
 	if preparedErr != nil {
@@ -98,14 +98,14 @@ func (repo libSQLRepository) GetBetsByPollId(pollID string) ([]Bet, error) {
 		return nil, fmt.Errorf("error while querying bets by poll_id")
 	}
 
-	var bets []Bet
+	var bets []*bet
 	for rows.Next() {
-		var bet Bet
-		if scanErr := rows.Scan(&bet.PollId, &bet.UserId, &bet.SelectedOptionIndex, &bet.BetStatus); scanErr != nil {
+		var bet bet
+		if scanErr := rows.Scan(&bet.PollID, &bet.UserID, &bet.SelectedOptionIndex, &bet.BetStatus); scanErr != nil {
 			return nil, fmt.Errorf("error while scanning bet: %w", scanErr)
 		}
 
-		bets = append(bets, bet)
+		bets = append(bets, &bet)
 
 		if err := rows.Err(); err != nil {
 			return nil, fmt.Errorf("error while iterating over rows: %w", err)
@@ -114,14 +114,14 @@ func (repo libSQLRepository) GetBetsByPollId(pollID string) ([]Bet, error) {
 	return bets, nil
 }
 
-func (repo libSQLRepository) UpdateBet(bet *Bet) error {
+func (repo libSQLRepository) UpdateBet(bet *bet) error {
 	query := "UPDATE bets SET selected_option_index = ?, bet_status = ? WHERE poll_id = ? AND user_id = ?"
 	preparedStatement, preparedErr := repo.db.Prepare(query)
 	if preparedErr != nil {
 		return fmt.Errorf("error while preparing update bet statement: %w", preparedErr)
 	}
 
-	result, execErr := preparedStatement.Exec(bet.SelectedOptionIndex, bet.BetStatus, bet.PollId, bet.UserId)
+	result, execErr := preparedStatement.Exec(bet.SelectedOptionIndex, bet.BetStatus, bet.PollID, bet.UserID)
 	if execErr != nil {
 		return fmt.Errorf("error while executing update bet statement: %w", execErr)
 	}

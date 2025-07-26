@@ -3,10 +3,11 @@
 package bets
 
 import (
-	"betting-discord-bot/internal/storage"
 	"os"
 	"strings"
 	"testing"
+
+	"betting-discord-bot/internal/storage"
 )
 
 // setupLibSQL is a helper function specifically for the LibSQL implementation.
@@ -91,9 +92,9 @@ func TestBetRepositoryImplementations(t *testing.T) {
 
 func testSaveAndGet(t *testing.T, repo BetRepository) {
 	// ARRANGE
-	bet := &Bet{
-		PollId:              "poll123",
-		UserId:              "user456",
+	bet := &bet{
+		PollID:              "poll123",
+		UserID:              "user456",
 		SelectedOptionIndex: 0,
 		BetStatus:           Pending,
 	}
@@ -104,14 +105,14 @@ func testSaveAndGet(t *testing.T, repo BetRepository) {
 	}
 
 	// ACT & ASSERT (Get)
-	retrievedBet, err := repo.GetByPollIdAndUserId(bet.PollId, bet.UserId)
+	retrievedBet, err := repo.GetByPollIdAndUserId(bet.PollID, bet.UserID)
 	if err != nil {
-		t.Fatalf("Failed to get bet by PollId and UserId: %v", err)
+		t.Fatalf("Failed to get bet by PollID and UserID: %v", err)
 	}
 	if retrievedBet == nil {
 		t.Fatal("Retrieved bet is nil, expected a valid bet")
 	}
-	if retrievedBet.PollId != bet.PollId || retrievedBet.UserId != bet.UserId {
+	if retrievedBet.PollID != bet.PollID || retrievedBet.UserID != bet.UserID {
 		t.Errorf("Retrieved bet does not match original: got %+v, want %+v", retrievedBet, bet)
 	}
 }
@@ -119,9 +120,9 @@ func testSaveAndGet(t *testing.T, repo BetRepository) {
 func testGetAllBetsFromUser(t *testing.T, repo BetRepository) {
 	// ARRANGE
 	userID := "user789"
-	bets := []Bet{
-		{PollId: "poll1", UserId: userID, SelectedOptionIndex: 0, BetStatus: Pending},
-		{PollId: "poll2", UserId: userID, SelectedOptionIndex: 1, BetStatus: Pending},
+	bets := []bet{
+		{PollID: "poll1", UserID: userID, SelectedOptionIndex: 0, BetStatus: Pending},
+		{PollID: "poll2", UserID: userID, SelectedOptionIndex: 1, BetStatus: Pending},
 	}
 	for _, bet := range bets {
 		if err := repo.Save(&bet); err != nil {
@@ -144,9 +145,9 @@ func testGetAllBetsFromUser(t *testing.T, repo BetRepository) {
 func testGetAllBetsFromPoll(t *testing.T, repo BetRepository) {
 	// ARRANGE
 	pollID := "poll456"
-	bets := []Bet{
-		{PollId: pollID, UserId: "user1", SelectedOptionIndex: 0, BetStatus: Pending},
-		{PollId: pollID, UserId: "user2", SelectedOptionIndex: 1, BetStatus: Pending},
+	bets := []bet{
+		{PollID: pollID, UserID: "user1", SelectedOptionIndex: 0, BetStatus: Pending},
+		{PollID: pollID, UserID: "user2", SelectedOptionIndex: 1, BetStatus: Pending},
 	}
 	for _, bet := range bets {
 		if err := repo.Save(&bet); err != nil {
@@ -157,7 +158,7 @@ func testGetAllBetsFromPoll(t *testing.T, repo BetRepository) {
 	// ACT
 	retrievedBets, err := repo.GetBetsByPollId(pollID)
 	if err != nil {
-		t.Fatalf("Failed to get bets by PollId: %v", err)
+		t.Fatalf("Failed to get bets by PollID: %v", err)
 	}
 
 	// ASSERT
@@ -168,9 +169,9 @@ func testGetAllBetsFromPoll(t *testing.T, repo BetRepository) {
 
 func testUpdateBet(t *testing.T, repo BetRepository) {
 	// ARRANGE
-	bet := &Bet{
-		PollId:    "poll123",
-		UserId:    "user456",
+	bet := &bet{
+		PollID:    "poll123",
+		UserID:    "user456",
 		BetStatus: Pending,
 	}
 	if err := repo.Save(bet); err != nil {
@@ -184,7 +185,7 @@ func testUpdateBet(t *testing.T, repo BetRepository) {
 	}
 
 	// ASSERT
-	retrievedBet, err := repo.GetByPollIdAndUserId(bet.PollId, bet.UserId)
+	retrievedBet, err := repo.GetByPollIdAndUserId(bet.PollID, bet.UserID)
 	if err != nil {
 		t.Fatalf("Failed to get updated bet: %v", err)
 	}

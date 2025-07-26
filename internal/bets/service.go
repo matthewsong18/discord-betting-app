@@ -1,9 +1,10 @@
 package bets
 
 import (
-	"betting-discord-bot/internal/polls"
 	"errors"
 	"fmt"
+
+	"betting-discord-bot/internal/polls"
 )
 
 type service struct {
@@ -18,7 +19,7 @@ func NewService(pollService polls.PollService, betRepo BetRepository) BetService
 	}
 }
 
-func (betService *service) CreateBet(pollID string, userID string, selectedOptionIndex int) (*Bet, error) {
+func (betService *service) CreateBet(pollID string, userID string, selectedOptionIndex int) (Bet, error) {
 	if selectedOptionIndex < 0 || selectedOptionIndex > 2 {
 		return nil, errors.New("invalid option index")
 	}
@@ -36,9 +37,9 @@ func (betService *service) CreateBet(pollID string, userID string, selectedOptio
 		return nil, err
 	}
 
-	bet := &Bet{
-		PollId:              pollID,
-		UserId:              userID,
+	bet := &bet{
+		PollID:              pollID,
+		UserID:              userID,
 		SelectedOptionIndex: selectedOptionIndex,
 		BetStatus:           Pending,
 	}
@@ -62,7 +63,7 @@ func checkIfUserAlreadyBetOnPoll(pollId string, userId string, s *service) error
 	return nil
 }
 
-func (betService *service) GetBet(pollID string, userID string) (*Bet, error) {
+func (betService *service) GetBet(pollID string, userID string) (Bet, error) {
 	if bet, err := betService.betRepo.GetByPollIdAndUserId(pollID, userID); err != nil {
 		return nil, fmt.Errorf("failed to get bet: %w", err)
 	} else {
@@ -89,7 +90,7 @@ func (betService *service) UpdateBetsByPollId(pollID string) error {
 			bet.BetStatus = Lost
 		}
 
-		if err := betService.betRepo.UpdateBet(&bet); err != nil {
+		if err := betService.betRepo.UpdateBet(bet); err != nil {
 			return fmt.Errorf("failed to update bet: %w", err)
 		}
 	}
@@ -103,7 +104,12 @@ func (betService *service) GetBetsFromUser(userID string) ([]Bet, error) {
 		return nil, fmt.Errorf("failed to get bets for user: %w", err)
 	}
 
-	return userBets, nil
+	var bets []Bet
+	for _, bet := range userBets {
+		bets = append(bets, bet)
+	}
+
+	return bets, nil
 }
 
 var _ BetService = (*service)(nil)

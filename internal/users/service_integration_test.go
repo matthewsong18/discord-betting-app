@@ -1,28 +1,46 @@
 package users
 
 import (
+	"testing"
+
 	"betting-discord-bot/internal/bets"
 	"github.com/google/uuid"
-	"testing"
 )
+
+type mockBet struct {
+	betKey bets.BetKey
+	status bets.BetStatus
+}
+
+func (m mockBet) GetBetKey() bets.BetKey {
+	return m.betKey
+}
+
+func (m mockBet) GetSelectedOptionIndex() int {
+	panic("should not be called")
+}
+
+func (m mockBet) GetBetStatus() bets.BetStatus {
+	return m.status
+}
+
+func createMockBet(status bets.BetStatus) bets.Bet {
+	return mockBet{betKey: bets.BetKey{PollID: uuid.NewString(), UserID: "user"}, status: status}
+}
 
 type mockBetService struct {
 	betsToReturn []bets.Bet
 }
 
-func (m *mockBetService) GetBetsFromUser(userID string) ([]bets.Bet, error) {
-	// Add User ID to bet
-	for i := range m.betsToReturn {
-		m.betsToReturn[i].UserId = userID
-	}
+func (m *mockBetService) GetBetsFromUser(string) ([]bets.Bet, error) {
 	return m.betsToReturn, nil
 }
 
-func (m *mockBetService) CreateBet(string, string, int) (*bets.Bet, error) {
+func (m *mockBetService) CreateBet(string, string, int) (bets.Bet, error) {
 	return nil, nil
 }
-func (m *mockBetService) GetBet(string, string) (*bets.Bet, error) { return nil, nil }
-func (m *mockBetService) UpdateBetsByPollId(string) error          { return nil }
+func (m *mockBetService) GetBet(string, string) (bets.Bet, error) { return nil, nil }
+func (m *mockBetService) UpdateBetsByPollId(string) error         { return nil }
 
 var _ bets.BetService = (*mockBetService)(nil)
 
@@ -30,22 +48,15 @@ func getTestBets(wins int, losses int, pending int) []bets.Bet {
 	var betList []bets.Bet
 
 	for i := 0; i < wins; i++ {
-		betList = append(
-			betList,
-			bets.Bet{BetStatus: bets.Won},
-		)
+		betList = append(betList, createMockBet(bets.Won))
 	}
 
 	for i := 0; i < losses; i++ {
-		betList = append(betList, bets.Bet{BetStatus: bets.Lost})
+		betList = append(betList, createMockBet(bets.Lost))
 	}
 
 	for i := 0; i < pending; i++ {
-		betList = append(betList, bets.Bet{BetStatus: bets.Pending})
-	}
-
-	for i := range betList {
-		betList[i].PollId = uuid.NewString()
+		betList = append(betList, createMockBet(bets.Pending))
 	}
 
 	return betList

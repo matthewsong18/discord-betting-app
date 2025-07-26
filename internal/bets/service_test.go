@@ -1,9 +1,10 @@
 package bets
 
 import (
-	"betting-discord-bot/internal/polls"
 	"errors"
 	"testing"
+
+	"betting-discord-bot/internal/polls"
 )
 
 func TestCreateBet(t *testing.T) {
@@ -26,16 +27,16 @@ func TestCreateBet(t *testing.T) {
 		t.Fatal("CreateBet returned an unexpected error:", err1)
 	}
 
-	if bet.PollId != pollId {
-		t.Errorf("Expected bet to be associated with poll %s, but got %s", pollId, bet.PollId)
+	if bet.GetBetKey().PollID != pollId {
+		t.Errorf("Expected bet to be associated with poll %s, but got %s", pollId, bet.GetBetKey().PollID)
 	}
 
-	if bet.UserId != userId {
-		t.Errorf("Expected bet to be associated with user %s, but got %s", userId, bet.UserId)
+	if bet.GetBetKey().UserID != userId {
+		t.Errorf("Expected bet to be associated with user %s, but got %s", userId, bet.GetBetKey().UserID)
 	}
 
-	if bet.SelectedOptionIndex != selectedOptionIndex {
-		t.Errorf("Expected bet to select option %d, but got %d", selectedOptionIndex, bet.SelectedOptionIndex)
+	if bet.GetSelectedOptionIndex() != selectedOptionIndex {
+		t.Errorf("Expected bet to select option %d, but got %d", selectedOptionIndex, bet.GetSelectedOptionIndex())
 	}
 }
 
@@ -133,8 +134,8 @@ func TestGetBetOutcome(t *testing.T) {
 		t.Fatal("CreateBet returned an unexpected error:", err1)
 	}
 
-	if bet.BetStatus != Pending {
-		t.Fatalf("Expected bet status to be 'PENDING', but got '%s'", bet.BetStatus)
+	if bet.GetBetStatus() != Pending {
+		t.Fatalf("Expected bet status to be 'PENDING', but got '%s'", bet.GetBetStatus())
 	}
 
 	if err := pollService.ClosePoll(poll.GetID()); err != nil {
@@ -155,12 +156,12 @@ func TestGetBetOutcome(t *testing.T) {
 		t.Fatal("GetBet returned an unexpected error:", err2)
 	}
 
-	if bet.BetStatus != Won {
-		t.Errorf("Expected bet status to be 'WON', but got '%s'", bet.BetStatus)
+	if bet.GetBetStatus() != Won {
+		t.Errorf("Expected bet status to be 'WON', but got '%s'", bet.GetBetStatus())
 	}
 
-	if bet.SelectedOptionIndex != selectedOptionIndex {
-		t.Errorf("Expected bet to select option %d, but got %d", selectedOptionIndex, bet.SelectedOptionIndex)
+	if bet.GetSelectedOptionIndex() != selectedOptionIndex {
+		t.Errorf("Expected bet to select option %d, but got %d", selectedOptionIndex, bet.GetSelectedOptionIndex())
 	}
 }
 
@@ -190,7 +191,7 @@ func TestGettingUserBets(t *testing.T) {
 		t.Errorf("Expected 1 bet for user %s, but got %d", userID, len(bets))
 	}
 
-	if bets[0] != *bet || bets[0].PollId != poll.GetID() || bets[0].UserId != userID {
+	if bets[0] != bet || bets[0].GetBetKey().PollID != poll.GetID() || bets[0].GetBetKey().UserID != userID {
 		t.Errorf("Expected bet %v, but got %v", bet, bets[0])
 	}
 }

@@ -21,14 +21,24 @@ func (bs BetStatus) String() string {
 	}
 }
 
-type Bet struct {
-	PollId              string
-	UserId              string
+type bet struct {
+	PollID              string
+	UserID              string
 	SelectedOptionIndex int
 	BetStatus           BetStatus
 }
 
+type Bet interface {
+	GetBetKey() BetKey
+	GetSelectedOptionIndex() int
+	GetBetStatus() BetStatus
+}
+
+func (b *bet) GetBetKey() BetKey           { return BetKey{b.PollID, b.UserID} }
+func (b *bet) GetSelectedOptionIndex() int { return b.SelectedOptionIndex }
+func (b *bet) GetBetStatus() BetStatus     { return b.BetStatus }
+
 type BetKey struct {
-	PollId string
-	UserId string
+	PollID string
+	UserID string
 }
