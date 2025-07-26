@@ -1,10 +1,11 @@
 package users
 
 import (
-	"betting-discord-bot/internal/bets"
-	"betting-discord-bot/internal/polls"
 	"errors"
 	"testing"
+
+	"betting-discord-bot/internal/bets"
+	"betting-discord-bot/internal/polls"
 )
 
 func TestCreateUser(t *testing.T) {
@@ -19,8 +20,8 @@ func TestCreateUser(t *testing.T) {
 		t.Fatalf("CreateUser returned an unexpected error: %v", err)
 	}
 
-	if user.DiscordID != "12345" {
-		t.Errorf("Expected DiscordID to be '12345', got '%s'", user.DiscordID)
+	if user.GetDiscordID() != "12345" {
+		t.Errorf("Expected DiscordID to be '12345', got '%s'", user.GetDiscordID())
 	}
 }
 
@@ -38,8 +39,8 @@ func TestGetUserByDiscordID(t *testing.T) {
 		t.Fatalf("GetUserByDiscordID returned an unexpected error: %v", err)
 	}
 
-	if retrievedUser.ID != user.ID {
-		t.Errorf("Expected ID to be '%s', got '%s'", user.ID, retrievedUser.ID)
+	if retrievedUser.GetID() != user.GetID() {
+		t.Errorf("Expected ID to be '%s', got '%s'", user.GetID(), retrievedUser.GetID())
 	}
 }
 
@@ -52,12 +53,12 @@ func TestDeleteUser(t *testing.T) {
 		t.Fatalf("CreateUser returned an unexpected error: %v", err)
 	}
 
-	err = userService.DeleteUser(user.DiscordID)
+	err = userService.DeleteUser(user.GetDiscordID())
 	if err != nil {
 		t.Fatalf("DeleteUser returned an unexpected error: %v", err)
 	}
 
-	_, err = userService.GetUserByDiscordID(user.DiscordID)
+	_, err = userService.GetUserByDiscordID(user.GetDiscordID())
 	if err == nil {
 		t.Fatalf("Expected GetUserByDiscordID to return an error after deletion")
 	}

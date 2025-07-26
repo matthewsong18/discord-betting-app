@@ -14,7 +14,7 @@ func NewLibSQLRepository(db *sql.DB) UserRepository {
 	return &libsqlRepository{db}
 }
 
-func (repo *libsqlRepository) Save(user *User) error {
+func (repo *libsqlRepository) Save(user *user) error {
 	query := `INSERT INTO users (id, discord_id) VALUES (?, ?)`
 	_, err := repo.db.Exec(query, user.ID, user.DiscordID)
 	if err != nil {
@@ -24,11 +24,11 @@ func (repo *libsqlRepository) Save(user *User) error {
 	return nil
 }
 
-func (repo *libsqlRepository) GetByID(id string) (*User, error) {
+func (repo *libsqlRepository) GetByID(id string) (*user, error) {
 	query := `SELECT id, discord_id FROM users WHERE id = ?`
 	row := repo.db.QueryRow(query, id)
 
-	var user User
+	var user user
 	err := row.Scan(&user.ID, &user.DiscordID)
 	if err != nil {
 		if errors.Is(err, sql.ErrNoRows) {
@@ -39,11 +39,11 @@ func (repo *libsqlRepository) GetByID(id string) (*User, error) {
 	return &user, nil
 }
 
-func (repo *libsqlRepository) GetByDiscordID(discordID string) (*User, error) {
+func (repo *libsqlRepository) GetByDiscordID(discordID string) (*user, error) {
 	query := `SELECT id, discord_id FROM users WHERE discord_id = ?`
 	row := repo.db.QueryRow(query, discordID)
 
-	var user User
+	var user user
 	err := row.Scan(&user.ID, &user.DiscordID)
 	if err != nil {
 		if errors.Is(err, sql.ErrNoRows) {

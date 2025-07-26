@@ -3,16 +3,16 @@ package users
 import "errors"
 
 type memoryRepository struct {
-	users map[string]*User
+	users map[string]*user
 }
 
 func NewMemoryRepository() UserRepository {
 	return &memoryRepository{
-		users: make(map[string]*User),
+		users: make(map[string]*user),
 	}
 }
 
-func (repo *memoryRepository) Save(user *User) error {
+func (repo *memoryRepository) Save(user *user) error {
 	if user == nil {
 		return errors.New("user is nil")
 	}
@@ -21,7 +21,7 @@ func (repo *memoryRepository) Save(user *User) error {
 	return nil
 }
 
-func (repo *memoryRepository) GetByID(id string) (*User, error) {
+func (repo *memoryRepository) GetByID(id string) (*user, error) {
 	user, exists := repo.users[id]
 	if !exists {
 		return nil, errors.New("user not found")
@@ -29,7 +29,7 @@ func (repo *memoryRepository) GetByID(id string) (*User, error) {
 	return user, nil
 }
 
-func (repo *memoryRepository) GetByDiscordID(discordID string) (*User, error) {
+func (repo *memoryRepository) GetByDiscordID(discordID string) (*user, error) {
 	for i, user := range repo.users {
 		if user.DiscordID == discordID {
 			return repo.users[i], nil

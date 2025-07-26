@@ -14,8 +14,8 @@ import (
 	"github.com/bwmarrin/discordgo"
 )
 
-func handleBet(s *discordgo.Session, i *discordgo.InteractionCreate, bot *Bot, pollID string, user *users.User, optionIndex int) {
-	bet, betErr := bot.BetService.CreateBet(pollID, user.ID, optionIndex)
+func handleBet(s *discordgo.Session, i *discordgo.InteractionCreate, bot *Bot, pollID string, user users.User, optionIndex int) {
+	bet, betErr := bot.BetService.CreateBet(pollID, user.GetID(), optionIndex)
 	if betErr != nil {
 		if errors.Is(betErr, bets.ErrUserAlreadyBet) {
 			if err := s.InteractionRespond(i.Interaction, &discordgo.InteractionResponse{

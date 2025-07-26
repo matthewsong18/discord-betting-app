@@ -1,10 +1,11 @@
 package users
 
 import (
-	"betting-discord-bot/internal/storage"
 	"database/sql"
 	"os"
 	"testing"
+
+	"betting-discord-bot/internal/storage"
 )
 
 // Creates a temporary database for testing user libsqlRepository.
@@ -39,7 +40,7 @@ func TestSaveAndGet(t *testing.T) {
 
 	repo := NewLibSQLRepository(db)
 
-	user := &User{
+	user := &user{
 		ID:        "test-id",
 		DiscordID: "test-discord-id",
 	}
@@ -64,7 +65,7 @@ func TestGetByDiscordID(t *testing.T) {
 
 	repo := NewLibSQLRepository(db)
 
-	user := &User{
+	user := &user{
 		ID:        "test-id",
 		DiscordID: "test-discord-id",
 	}
@@ -90,7 +91,7 @@ func TestDelete(t *testing.T) {
 
 	repo := NewLibSQLRepository(db)
 
-	user := &User{
+	user := &user{
 		ID:        "test-id",
 		DiscordID: "test-discord-id",
 	}
