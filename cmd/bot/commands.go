@@ -1,9 +1,10 @@
 package main
 
 import (
-	"github.com/bwmarrin/discordgo"
 	"log"
 	"os"
+
+	"github.com/bwmarrin/discordgo"
 )
 
 func (bot *Bot) RegisterCommands() error {

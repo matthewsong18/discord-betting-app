@@ -1,12 +1,13 @@
 package main
 
 import (
-	"betting-discord-bot/internal/users"
 	"errors"
-	"github.com/bwmarrin/discordgo"
 	"log"
 	"strconv"
 	"strings"
+
+	"betting-discord-bot/internal/users"
+	"github.com/bwmarrin/discordgo"
 )
 
 func (bot *Bot) interactionHandler(s *discordgo.Session, i *discordgo.InteractionCreate) {

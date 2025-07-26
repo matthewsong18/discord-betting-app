@@ -1,11 +1,12 @@
 package polls
 
 import (
-	"betting-discord-bot/internal/storage"
-	"github.com/google/uuid"
 	"os"
 	"strings"
 	"testing"
+
+	"betting-discord-bot/internal/storage"
+	"github.com/google/uuid"
 )
 
 func setupLibSQL(t *testing.T) (PollRepository, func()) {

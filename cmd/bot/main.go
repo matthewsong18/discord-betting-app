@@ -1,16 +1,17 @@
 package main
 
 import (
+	"database/sql"
+	"fmt"
+	"log"
+	"os"
+	"os/signal"
+
 	"betting-discord-bot/internal/bets"
 	"betting-discord-bot/internal/polls"
 	"betting-discord-bot/internal/storage"
 	"betting-discord-bot/internal/users"
-	"database/sql"
-	"fmt"
 	"github.com/bwmarrin/discordgo"
-	"log"
-	"os"
-	"os/signal"
 )
 
 // Bot parameters

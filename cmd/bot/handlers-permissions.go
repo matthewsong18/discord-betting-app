@@ -1,8 +1,9 @@
 package main
 
 import (
-	"github.com/bwmarrin/discordgo"
 	"log"
+
+	"github.com/bwmarrin/discordgo"
 )
 
 func doesNotHaveManageMemberPerm(s *discordgo.Session, i *discordgo.InteractionCreate) bool {

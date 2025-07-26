@@ -3,11 +3,12 @@ package main
 import (
 	"bytes"
 	"fmt"
-	"github.com/bwmarrin/discordgo"
 	"io"
 	"log"
 	"net/http"
 	"os"
+
+	"github.com/bwmarrin/discordgo"
 )
 
 const DiscordApi = `https://discord.com/api/v10`

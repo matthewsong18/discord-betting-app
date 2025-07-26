@@ -1,11 +1,12 @@
 package main
 
 import (
-	"betting-discord-bot/internal/polls"
 	"encoding/json"
 	"fmt"
-	"github.com/bwmarrin/discordgo"
 	"log"
+
+	"betting-discord-bot/internal/polls"
+	"github.com/bwmarrin/discordgo"
 )
 
 func pollModalComponents() []discordgo.MessageComponent {
