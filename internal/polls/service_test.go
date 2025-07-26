@@ -58,7 +58,7 @@ func testGetAllOpen(t *testing.T, pollService PollService) {
 	if err != nil {
 		t.Fatalf("Failed to create closed poll: %v", err)
 	}
-	err = pollService.ClosePoll(closedPoll.ID)
+	err = pollService.ClosePoll(closedPoll.GetID())
 	if err != nil {
 		t.Fatalf("Failed to close poll: %v", err)
 	}
@@ -86,21 +86,21 @@ func testCreatePoll(t *testing.T, service PollService) {
 		t.Fatalf("CreatePoll returned an unexpected error: %v", err)
 	}
 
-	if poll.ID == "" {
+	if poll.GetID() == "" {
 		t.Error("Expected poll ID to be set, but it was empty")
 	}
 
-	if poll.Title != title {
-		t.Errorf("Expected poll title to be '%s', but got '%s'", title, poll.Title)
+	if poll.GetTitle() != title {
+		t.Errorf("Expected poll title to be '%s', but got '%s'", title, poll.GetTitle())
 	}
 
 	for i, option := range options {
-		if poll.Options[i] != option {
-			t.Errorf("Expected option %d to be '%s', but got '%s'", i, option, poll.Options[i])
+		if poll.GetOptions()[i] != option {
+			t.Errorf("Expected option %d to be '%s', but got '%s'", i, option, poll.GetOptions()[i])
 		}
 	}
 
-	if poll.Status != Open {
+	if poll.GetStatus() != Open {
 		t.Error("Expected poll to be open, but it was closed")
 	}
 
@@ -128,20 +128,20 @@ func testClosePoll(t *testing.T, service PollService) {
 	if err != nil {
 		t.Fatal("CreatePoll returned an unexpected error:", err)
 	}
-	if poll.Status != Open {
+	if poll.GetStatus() != Open {
 		t.Fatal("Expected poll to be open after creation, but it was closed")
 	}
 
-	if err := service.ClosePoll(poll.ID); err != nil {
+	if err := service.ClosePoll(poll.GetID()); err != nil {
 		t.Fatal("ClosePoll returned an unexpected error:", err)
 	}
 
-	updatedPoll, updateError := service.GetPollById(poll.ID)
+	updatedPoll, updateError := service.GetPollById(poll.GetID())
 	if updateError != nil {
 		t.Fatal("GetPollById returned an unexpected error:", updateError)
 	}
 
-	if updatedPoll.Status != Closed {
+	if updatedPoll.GetStatus() != Closed {
 		t.Error("Expected poll to be closed after ClosePoll, but it was still open")
 	}
 }
@@ -154,24 +154,24 @@ func testSelectOutcome(t *testing.T, service PollService) {
 
 	// Test selecting an outcome
 	teamAIndex := Option1
-	err = service.SelectOutcome(poll.ID, teamAIndex)
+	err = service.SelectOutcome(poll.GetID(), teamAIndex)
 	if err != nil {
 		t.Fatal("SelectOutcome returned an unexpected error", err)
 	}
 
 	// Get the updated poll
-	poll, err = service.GetPollById(poll.ID)
+	poll, err = service.GetPollById(poll.GetID())
 	if err != nil {
 		t.Fatal("GetPollById returned an unexpected error:", err)
 	}
 
 	// Verify the outcome
-	if poll.Outcome != teamAIndex {
-		t.Errorf("Expected selected outcome to be '%d', but got '%d'", teamAIndex, poll.Outcome)
+	if poll.GetOutcome() != teamAIndex {
+		t.Errorf("Expected selected outcome to be '%d', but got '%d'", teamAIndex, poll.GetOutcome())
 	}
 }
 
-func createDefaultTestPoll(service PollService) (*Poll, error) {
+func createDefaultTestPoll(service PollService) (Poll, error) {
 	title := "Which team will win first map?"
 	options := []string{"Team A", "Team B"}
 	poll, err := service.CreatePoll(title, options)
@@ -185,12 +185,12 @@ func testGetPollById(t *testing.T, pollService PollService) {
 		t.Fatal("CreatePoll returned an unexpected error:", err)
 	}
 
-	retrievedPoll, err := pollService.GetPollById(poll.ID)
+	retrievedPoll, err := pollService.GetPollById(poll.GetID())
 	if err != nil {
 		t.Fatal("GetPollById returned an unexpected error:", err)
 	}
 
-	if retrievedPoll.ID != poll.ID {
+	if retrievedPoll.GetID() != poll.GetID() {
 		t.Errorf("Expected retrieved poll to be equal to created poll, but they differ")
 	}
 }

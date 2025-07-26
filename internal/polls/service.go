@@ -16,13 +16,13 @@ func NewService(pollRepo PollRepository) PollService {
 	}
 }
 
-func (s *service) CreatePoll(title string, options []string) (*Poll, error) {
+func (s *service) CreatePoll(title string, options []string) (Poll, error) {
 	if notExactlyTwo(options) {
 		return nil, errors.New("poll must have exactly two options")
 	}
 
 	// Create a new poll
-	poll := &Poll{
+	poll := &poll{
 		ID:      uuid.New().String(),
 		Title:   title,
 		Options: options,
@@ -30,6 +30,7 @@ func (s *service) CreatePoll(title string, options []string) (*Poll, error) {
 		Outcome: Pending,
 	}
 
+	// Save the poll to the repository
 	err := s.pollRepo.Save(poll)
 	if err != nil {
 		return nil, err
@@ -43,7 +44,7 @@ func notExactlyTwo(options []string) bool {
 }
 
 func (s *service) ClosePoll(pollID string) error {
-	poll, err := s.GetPollById(pollID)
+	poll, err := s.pollRepo.GetById(pollID)
 	if err != nil {
 		return fmt.Errorf("failed to get poll by ID: %w", err)
 	}
@@ -75,7 +76,7 @@ func (s *service) SelectOutcome(pollID string, outcomeStatus OutcomeStatus) erro
 	return nil
 }
 
-func (s *service) GetPollById(id string) (*Poll, error) {
+func (s *service) GetPollById(id string) (Poll, error) {
 	poll, err := s.pollRepo.GetById(id)
 	if err != nil {
 		return nil, fmt.Errorf("failed to get poll by ID: %w", err)
@@ -84,13 +85,19 @@ func (s *service) GetPollById(id string) (*Poll, error) {
 	return poll, nil
 }
 
-func (s *service) GetOpenPolls() ([]*Poll, error) {
+func (s *service) GetOpenPolls() ([]Poll, error) {
 	openPolls, err := s.pollRepo.GetOpenPolls()
 	if err != nil {
 		return nil, fmt.Errorf("failed to get open polls: %w", err)
 	}
 
-	return openPolls, nil
+	pollsAsInterfaces := make([]Poll, len(openPolls))
+
+	for i, p := range openPolls {
+		pollsAsInterfaces[i] = p
+	}
+
+	return pollsAsInterfaces, nil
 }
 
 var _ PollService = (*service)(nil)

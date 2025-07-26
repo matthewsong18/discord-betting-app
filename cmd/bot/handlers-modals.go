@@ -65,32 +65,32 @@ func (bot *Bot) handlePollModalSubmit(s *discordgo.Session, i *discordgo.Interac
 	sendPollMessage(title, option1, option2, poll, i)
 }
 
-func sendPollMessage(title string, option1 string, option2 string, poll *polls.Poll, i *discordgo.InteractionCreate) {
+func sendPollMessage(title string, option1 string, option2 string, poll polls.Poll, i *discordgo.InteractionCreate) {
 	pollString := fmt.Sprintf("# %s\n-# Warning: You cannot change your bet after submission.", title)
 	pollTitle := NewTextDisplay(pollString)
 
 	option1Button := NewButton(
 		2,
 		fmt.Sprintf("Bet on %s", option1),
-		fmt.Sprintf("bet:%s:0", poll.ID),
+		fmt.Sprintf("bet:%s:0", poll.GetID()),
 	)
 
 	option2Button := NewButton(
 		2,
 		fmt.Sprintf("Bet on %s", option2),
-		fmt.Sprintf("bet:%s:1", poll.ID),
+		fmt.Sprintf("bet:%s:1", poll.GetID()),
 	)
 
 	endPollButton := NewButton(
 		4,
 		"End Poll",
-		fmt.Sprintf("bet:%s:2", poll.ID),
+		fmt.Sprintf("bet:%s:2", poll.GetID()),
 	)
 
 	selectOutcomeButton := NewButton(
 		4,
 		"Select Outcome",
-		fmt.Sprintf("bet:%s:3", poll.ID),
+		fmt.Sprintf("bet:%s:3", poll.GetID()),
 	)
 
 	buttons := NewActionRow(

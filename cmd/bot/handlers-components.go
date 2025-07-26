@@ -1,16 +1,17 @@
 package main
 
 import (
-	"betting-discord-bot/internal/bets"
-	"betting-discord-bot/internal/polls"
-	"betting-discord-bot/internal/users"
 	"encoding/json"
 	"errors"
 	"fmt"
-	"github.com/bwmarrin/discordgo"
 	"log"
 	"strconv"
 	"strings"
+
+	"betting-discord-bot/internal/bets"
+	"betting-discord-bot/internal/polls"
+	"betting-discord-bot/internal/users"
+	"github.com/bwmarrin/discordgo"
 )
 
 func handleBet(s *discordgo.Session, i *discordgo.InteractionCreate, bot *Bot, pollID string, user *users.User, optionIndex int) {
@@ -91,7 +92,7 @@ func (bot *Bot) handleSelectOutcomeButton(s *discordgo.Session, i *discordgo.Int
 		return
 	}
 
-	if poll.Status == polls.Open {
+	if poll.GetStatus() == polls.Open {
 		sendInteractionResponse(s, i, "The poll is still open. You cannot select an outcome.")
 	}
 
@@ -104,12 +105,12 @@ func (bot *Bot) handleSelectOutcomeButton(s *discordgo.Session, i *discordgo.Int
 		fmt.Sprintf("select:%s", pollID),
 		[]interface{}{
 			&StringOption{
-				Label:       poll.Options[0],
+				Label:       poll.GetOptions()[0],
 				Value:       "1",
 				Description: "Option 1",
 			},
 			&StringOption{
-				Label:       poll.Options[1],
+				Label:       poll.GetOptions()[1],
 				Value:       "2",
 				Description: "Option 2",
 			},
@@ -185,19 +186,14 @@ func (bot *Bot) handleSelectOutcomeDropdown(s *discordgo.Session, i *discordgo.I
 		log.Panicf("Error getting poll: %v", pollErr)
 	}
 
-	if poll.Outcome != pollOutcome {
-		log.Panicf("Poll did not update correctly. Expected %d but got %d", pollOutcome, poll.Outcome)
-	}
-
-	log.Printf("Outcome (%d):(%d) has been selected for poll %s", pollOutcome, int(poll.Outcome), pollID)
 	sendInteractionResponse(s, i, "The outcome of the poll has been selected.")
 
 	messageString := NewTextDisplay(fmt.Sprintf(
 		"Outcome for **%s** between **%s** and **%s** has been decided.\n\nThe outcome is **%s**.",
-		poll.Title,
-		poll.Options[0],
-		poll.Options[1],
-		poll.Options[poll.Outcome],
+		poll.GetTitle(),
+		poll.GetOptions()[0],
+		poll.GetOptions()[1],
+		poll.GetOptions()[poll.GetOutcome()],
 	))
 
 	messageContainer := NewContainer(

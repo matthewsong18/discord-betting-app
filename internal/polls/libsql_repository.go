@@ -14,7 +14,7 @@ func NewLibSQLRepository(db *sql.DB) PollRepository {
 	return &libSQLRepository{db: db}
 }
 
-func (repo *libSQLRepository) Save(poll *Poll) error {
+func (repo *libSQLRepository) Save(poll *poll) error {
 	if err := saveToPollsTable(poll, repo); err != nil {
 		return fmt.Errorf("save polls table failed: %w", err)
 	}
@@ -26,7 +26,7 @@ func (repo *libSQLRepository) Save(poll *Poll) error {
 	return nil
 }
 
-func saveToPollsTable(poll *Poll, repo *libSQLRepository) error {
+func saveToPollsTable(poll *poll, repo *libSQLRepository) error {
 	query := "INSERT INTO polls (id, title, status, outcome) VALUES (?, ?, ?, ?)"
 	preparedStatement, prepareError := repo.db.Prepare(query)
 	if prepareError != nil {
@@ -43,7 +43,7 @@ func saveToPollsTable(poll *Poll, repo *libSQLRepository) error {
 	return nil
 }
 
-func saveToOptionsTable(poll *Poll, repo *libSQLRepository) error {
+func saveToOptionsTable(poll *poll, repo *libSQLRepository) error {
 	query := "INSERT INTO poll_options (poll_id, option_index, option_text) VALUES (?, ?, ?)"
 	preparedStatement, prepareError := repo.db.Prepare(query)
 	if prepareError != nil {
@@ -64,7 +64,7 @@ func saveToOptionsTable(poll *Poll, repo *libSQLRepository) error {
 	return nil
 }
 
-func (repo *libSQLRepository) GetById(id string) (*Poll, error) {
+func (repo *libSQLRepository) GetById(id string) (*poll, error) {
 	poll, pollErr := getFromPollTable(id, repo)
 	if pollErr != nil {
 		return nil, fmt.Errorf("error while getting poll from polls table: %w", pollErr)
@@ -79,7 +79,7 @@ func (repo *libSQLRepository) GetById(id string) (*Poll, error) {
 	return poll, nil
 }
 
-func getFromPollTable(id string, repo *libSQLRepository) (*Poll, error) {
+func getFromPollTable(id string, repo *libSQLRepository) (*poll, error) {
 	query := "SELECT id, title, status, outcome FROM polls WHERE id = ?"
 	preparedStatement, err := repo.db.Prepare(query)
 	if err != nil {
@@ -87,7 +87,7 @@ func getFromPollTable(id string, repo *libSQLRepository) (*Poll, error) {
 	}
 
 	row := preparedStatement.QueryRow(id)
-	poll := &Poll{}
+	poll := &poll{}
 	if err := row.Scan(&poll.ID, &poll.Title, &poll.Status, &poll.Outcome); err != nil {
 		if errors.Is(err, sql.ErrNoRows) {
 			return nil, fmt.Errorf("poll with id %s not found", id)
@@ -125,7 +125,7 @@ func getFromOptionsTable(pollID string, repo *libSQLRepository) ([]string, error
 	return options, nil
 }
 
-func (repo *libSQLRepository) Update(poll *Poll) error {
+func (repo *libSQLRepository) Update(poll *poll) error {
 	query := "UPDATE polls SET title = ?, status = ?, outcome = ? WHERE id = ?"
 	preparedStatement, prepareError := repo.db.Prepare(query)
 	if prepareError != nil {
@@ -213,7 +213,7 @@ func deletePollOptions(pollID string, repo *libSQLRepository) error {
 	return nil
 }
 
-func (repo *libSQLRepository) GetOpenPolls() ([]*Poll, error) {
+func (repo *libSQLRepository) GetOpenPolls() ([]*poll, error) {
 	// Getting IDs instead of polls because poll query is complicated and already exists in GetPollByID
 	query := "SELECT id FROM polls WHERE status = ?"
 	preparedStatement, preparedErr := repo.db.Prepare(query)
@@ -237,7 +237,7 @@ func (repo *libSQLRepository) GetOpenPolls() ([]*Poll, error) {
 	}
 
 	// Request Polls with those IDs
-	var openPolls []*Poll
+	var openPolls []*poll
 	for _, id := range openPollIDs {
 		poll, err := repo.GetById(id)
 		if err != nil {

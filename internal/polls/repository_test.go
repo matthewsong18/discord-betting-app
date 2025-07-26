@@ -83,7 +83,7 @@ func TestPollRepositoryImplementations(t *testing.T) {
 
 func testSaveAndReceive(t *testing.T, repo PollRepository) {
 	// ARRANGE: Create a new poll to save
-	pollToSave := &Poll{
+	pollToSave := &poll{
 		ID:    uuid.New().String(),
 		Title: "First Poll",
 		Options: []string{
@@ -122,7 +122,7 @@ func testSaveAndReceive(t *testing.T, repo PollRepository) {
 }
 
 func testUpdate(t *testing.T, repo PollRepository) {
-	pollToUpdate := &Poll{
+	pollToUpdate := &poll{
 		ID:     uuid.NewString(),
 		Title:  "Poll to Update",
 		Status: Open,
@@ -170,7 +170,7 @@ func testUpdate(t *testing.T, repo PollRepository) {
 
 func testDelete(t *testing.T, repo PollRepository) {
 	// ARRANGE: Create a new poll to delete
-	pollToDelete := &Poll{
+	pollToDelete := &poll{
 		ID:     uuid.NewString(),
 		Title:  "Poll to Delete",
 		Status: Open,
@@ -206,7 +206,7 @@ func testDelete(t *testing.T, repo PollRepository) {
 
 func testGetAllOpenInRepo(t *testing.T, repo PollRepository) {
 	// ARRANGE: Create open and closed polls
-	if err := repo.Save(&Poll{
+	if err := repo.Save(&poll{
 		ID:    uuid.NewString(),
 		Title: "open poll 1",
 		Options: []string{
@@ -218,7 +218,7 @@ func testGetAllOpenInRepo(t *testing.T, repo PollRepository) {
 	}); err != nil {
 		t.Fatalf("Save() returned an unexpected error: %v", err)
 	}
-	if err := repo.Save(&Poll{
+	if err := repo.Save(&poll{
 		ID:    uuid.NewString(),
 		Title: "open poll 2",
 		Options: []string{
@@ -230,7 +230,7 @@ func testGetAllOpenInRepo(t *testing.T, repo PollRepository) {
 	}); err != nil {
 		t.Fatalf("Save() returned an unexpected error: %v", err)
 	}
-	if err := repo.Save(&Poll{
+	if err := repo.Save(&poll{
 		ID:    uuid.NewString(),
 		Title: "closed poll 1",
 		Options: []string{

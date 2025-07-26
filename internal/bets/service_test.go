@@ -17,7 +17,7 @@ func TestCreateBet(t *testing.T) {
 		t.Fatal("Failed to create poll:", err)
 	}
 
-	pollId := poll.ID
+	pollId := poll.GetID()
 	userId := "12345"
 	selectedOptionIndex := 0
 	bet, err1 := betService.CreateBet(pollId, userId, selectedOptionIndex)
@@ -66,7 +66,7 @@ func TestPreventingMultipleBetsPerPoll(t *testing.T) {
 	poll, _ := pollService.CreatePoll("Test Poll", []string{"Option 1", "Option 2"})
 
 	// Create the first bet for the poll
-	pollId := poll.ID
+	pollId := poll.GetID()
 	userId := "12345"
 	selectedOptionIndex := 0
 
@@ -96,12 +96,12 @@ func TestCannotBetOnClosedPoll(t *testing.T) {
 		t.Fatal("Failed to create poll:", err)
 	}
 
-	if err := pollService.ClosePoll(poll.ID); err != nil {
+	if err := pollService.ClosePoll(poll.GetID()); err != nil {
 		t.Fatal("Failed to close poll:", err)
 	}
 
 	// Attempt to create a bet on a closed poll
-	_, err = betService.CreateBet(poll.ID, "12345", 0)
+	_, err = betService.CreateBet(poll.GetID(), "12345", 0)
 	if err == nil {
 		t.Fatal("Expected an error when betting on a closed poll, but got nil")
 	}
@@ -124,7 +124,7 @@ func TestGetBetOutcome(t *testing.T) {
 		t.Fatal("Failed to create poll:", err)
 	}
 
-	pollId := poll.ID
+	pollId := poll.GetID()
 	userId := "12345"
 	selectedOptionIndex := 0
 	bet, err1 := betService.CreateBet(pollId, userId, selectedOptionIndex)
@@ -137,16 +137,16 @@ func TestGetBetOutcome(t *testing.T) {
 		t.Fatalf("Expected bet status to be 'PENDING', but got '%s'", bet.BetStatus)
 	}
 
-	if err := pollService.ClosePoll(poll.ID); err != nil {
+	if err := pollService.ClosePoll(poll.GetID()); err != nil {
 		t.Fatal("ClosePoll returned an unexpected error:", err)
 	}
 
-	err = pollService.SelectOutcome(poll.ID, polls.OutcomeStatus(selectedOptionIndex))
+	err = pollService.SelectOutcome(poll.GetID(), polls.OutcomeStatus(selectedOptionIndex))
 	if err != nil {
 		t.Fatal("SelectOutcome returned an unexpected error:", err)
 	}
 
-	if err := betService.UpdateBetsByPollId(poll.ID); err != nil {
+	if err := betService.UpdateBetsByPollId(poll.GetID()); err != nil {
 		t.Fatal("UpdateBetsByPollId returned an unexpected error:", err)
 	}
 	bet, err2 := betService.GetBet(pollId, userId)
@@ -176,7 +176,7 @@ func TestGettingUserBets(t *testing.T) {
 	}
 
 	userID := "12345"
-	bet, createBetErr := betService.CreateBet(poll.ID, userID, 0)
+	bet, createBetErr := betService.CreateBet(poll.GetID(), userID, 0)
 	if createBetErr != nil {
 		t.Fatal("Failed to create bet:", createBetErr)
 	}
@@ -190,7 +190,7 @@ func TestGettingUserBets(t *testing.T) {
 		t.Errorf("Expected 1 bet for user %s, but got %d", userID, len(bets))
 	}
 
-	if bets[0] != *bet || bets[0].PollId != poll.ID || bets[0].UserId != userID {
+	if bets[0] != *bet || bets[0].PollId != poll.GetID() || bets[0].UserId != userID {
 		t.Errorf("Expected bet %v, but got %v", bet, bets[0])
 	}
 }

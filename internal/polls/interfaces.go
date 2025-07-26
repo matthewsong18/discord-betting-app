@@ -3,18 +3,18 @@ package polls
 import "errors"
 
 type PollService interface {
-	CreatePoll(title string, options []string) (*Poll, error)
+	CreatePoll(title string, options []string) (Poll, error)
 	ClosePoll(pollID string) error
 	SelectOutcome(pollID string, outcomeIndex OutcomeStatus) error
-	GetPollById(id string) (*Poll, error)
-	GetOpenPolls() ([]*Poll, error)
+	GetPollById(id string) (Poll, error)
+	GetOpenPolls() ([]Poll, error)
 }
 
 type PollRepository interface {
-	Save(poll *Poll) error
-	GetById(id string) (*Poll, error)
-	GetOpenPolls() ([]*Poll, error)
-	Update(poll *Poll) error
+	Save(poll *poll) error
+	GetById(id string) (*poll, error)
+	GetOpenPolls() ([]*poll, error)
+	Update(poll *poll) error
 	Delete(pollID string) error
 }
 

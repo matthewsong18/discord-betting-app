@@ -28,7 +28,7 @@ func (betService *service) CreateBet(pollID string, userID string, selectedOptio
 		return nil, err
 	}
 
-	if poll.Status == polls.Closed {
+	if poll.GetStatus() == polls.Closed {
 		return nil, ErrPollIsClosed
 	}
 
@@ -81,7 +81,7 @@ func (betService *service) UpdateBetsByPollId(pollID string) error {
 		return fmt.Errorf("failed to get bets for poll: %w", err)
 	}
 
-	pollResult := int(poll.Outcome)
+	pollResult := int(poll.GetOutcome())
 	for _, bet := range betList {
 		if bet.SelectedOptionIndex == pollResult {
 			bet.BetStatus = Won
